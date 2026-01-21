@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==================== DESARROLLO ====================
+    // IMPORTANTE: Usar solo para desarrollo
+    // Para producción, descomentar reglas específicas abajo
+    
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ==================== PRODUCCIÓN ====================
+    // Descomentar para usar en producción
+    
+    /*
+    // USERS - Solo el admin y el usuario mismo pueden leer
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || 
+                    getUserRole(request.auth.uid) == 'admin';
+      allow write: if getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // DEVICES - Admin puede gestionar, usuarios ven los suyos
+    match /devices/{deviceId} {
+      allow read: if request.auth != null && 
+                    (getDeviceUser(deviceId) == request.auth.uid ||
+                     getUserRole(request.auth.uid) == 'admin');
+      allow write: if getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // PRODUCTS - Todos los autenticados pueden leer
+    match /products/{productId} {
+      allow read: if request.auth != null;
+      allow write: if getUserRole(request.auth.uid) == 'admin';
+      allow update: if getUserRole(request.auth.uid) == 'admin' &&
+                      request.resource.data.keys().hasAll(['name', 'price']);
+    }
+
+    // ORDERS - Usuario que creó o admin
+    match /orders/{orderId} {
+      allow read: if request.auth != null && 
+                    (getOrderCreator(orderId) == request.auth.uid ||
+                     getUserRole(request.auth.uid) == 'admin' ||
+                     getUserRole(request.auth.uid) == 'cocina');
+      allow create: if request.auth != null &&
+                      hasRequiredOrderFields();
+      allow update: if request.auth != null &&
+                      (getOrderCreator(orderId) == request.auth.uid ||
+                       getUserRole(request.auth.uid) == 'admin' ||
+                       getUserRole(request.auth.uid) == 'cocina');
+    }
+
+    // SALES - Usuario, admin, supervisor
+    match /sales/{saleId} {
+      allow read: if request.auth != null && 
+                    (getSaleCreator(saleId) == request.auth.uid ||
+                     getUserRole(request.auth.uid) == 'admin' ||
+                     getUserRole(request.auth.uid) == 'supervisor' ||
+                     getUserRole(request.auth.uid) == 'capitan');
+      allow create: if request.auth != null &&
+                      (getUserRole(request.auth.uid) in ['capitan', 'bar'] ||
+                       getUserRole(request.auth.uid) == 'admin');
+      allow update: if getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // DAILY CLOSES - Solo admin y supervisor
+    match /daily_closes/{closeId} {
+      allow read: if getUserRole(request.auth.uid) in ['admin', 'supervisor'];
+      allow write: if getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // AUDIT LOGS - Solo admin
+    match /audit_logs/{auditId} {
+      allow read: if getUserRole(request.auth.uid) == 'admin';
+      allow write: if getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // ==================== HELPER FUNCTIONS ====================
+
+    function getUserRole(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId)).data;
+      return user.role;
+    }
+
+    function getDeviceUser(deviceId) {
+      let device = get(/databases/$(database)/documents/devices/$(deviceId)).data;
+      return device.userId;
+    }
+
+    function getOrderCreator(orderId) {
+      let order = get(/databases/$(database)/documents/orders/$(orderId)).data;
+      return order.createdBy;
+    }
+
+    function getSaleCreator(saleId) {
+      let sale = get(/databases/$(database)/documents/sales/$(saleId)).data;
+      return sale.saleBy;
+    }
+
+    function hasRequiredOrderFields() {
+      return request.resource.data.keys().hasAll(['tableNumber', 'items', 'status']);
+    }
+    */
+  }
+}
