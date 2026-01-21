@@ -1,53 +1,14 @@
-import { useState } from 'react'
-import { useStore } from '@/store/appStore'
-import deviceService from '@/services/deviceService'
+import { LoginPin } from '../components/auth/LoginPin'
+
+/**
+ * Login Page
+ * 
+ * Punto de entrada al sistema
+ * Utiliza el componente LoginPin para la interfaz de autenticación
+ */
 
 function Login() {
-  const [pin, setPin] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { setCurrentUser, setCurrentDevice } = useStore()
-
-  const handleLogin = async () => {
-    try {
-      setError('')
-      setLoading(true)
-
-      if (pin.length !== 4 || !/^\d+$/.test(pin)) {
-        setError('PIN debe ser 4 dígitos')
-        return
-      }
-
-      // TODO: Validar PIN en Firebase
-      // TODO: Registrar dispositivo
-      // TODO: Verificar aprobación del dispositivo
-
-      const deviceInfo = await deviceService.getDeviceInfo()
-      console.log('Device info:', deviceInfo)
-
-      // Simulación temporal
-      setError('Configurar Firebase primero')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleLogin()
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          TPV Solutions
-        </h1>
-
-        <div className="space-y-6">
+  return <LoginPin />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               PIN de 4 dígitos
