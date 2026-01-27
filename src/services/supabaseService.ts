@@ -668,10 +668,19 @@ class SupabaseService {
 
   async createSale(sale: Omit<Sale, 'id'>): Promise<string> {
     try {
-      // Remove timestamp fields (Supabase handles with triggers)
-      const payload: any = { ...sale }
-      if ('createdAt' in payload) delete payload.createdAt
-      if ('updatedAt' in payload) delete payload.updatedAt
+      // Map TypeScript Sale to Supabase schema
+      const payload: any = {
+        order_id: (sale as any).orderIds?.[0] || null, // Take first order ID (sales table has singular order_id)
+        waiter_id: (sale as any).saleBy || null, // Map saleBy -> waiter_id
+        table_number: sale.tableNumber,
+        items: sale.items,
+        subtotal: sale.subtotal,
+        tip_amount: sale.tip || 0,
+        tip_percentage: 0, // Calculate if needed: Math.round((sale.tip / sale.subtotal) * 100)
+        total: sale.total,
+        payment_method: sale.paymentMethod,
+        device_id: null, // TODO: Add device tracking if needed
+      }
       
       const { data, error } = await supabase
         .from('sales')

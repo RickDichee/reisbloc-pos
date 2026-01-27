@@ -76,7 +76,7 @@ export default function OrdersToServe() {
   const byTable = useMemo(() => {
     const map = new Map<number, Order[]>()
     orders.forEach(order => {
-      const table = order.tableNumber
+      const table = order.tableNumber || 0 // Fallback to 0 if undefined
       const list = map.get(table) || []
       map.set(table, [...list, order])
     })
@@ -84,7 +84,7 @@ export default function OrdersToServe() {
     return Array.from(map.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([tableNumber, list]) => ({
-        tableNumber,
+        tableNumber: tableNumber || 0, // Ensure tableNumber is always a number
         orders: list.sort((a, b) => {
           const aTime = a.sentToKitchenAt ? a.sentToKitchenAt.getTime() : 0
           const bTime = b.sentToKitchenAt ? b.sentToKitchenAt.getTime() : 0
