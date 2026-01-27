@@ -8,6 +8,8 @@
     "dev:staging": "cross-env VITE_SUPABASE_URL=https://nmovxyaibnixvxtepbod.supabase.co VITE_SUPABASE_ANON_KEY=sb_publishable_sN1a5sgDkkXymuQbHZR6_g_z73xcs_Q VITE_ENVIRONMENT=staging vite",
     "build": "vite build",
     "preview": "vite preview",
+      "dev:production": "cross-env $(cat .env.production | grep -v '#' | xargs) vite",
+      "deploy:production": "bash scripts/deploy-production.sh",
     "lint": "eslint src --ext ts,tsx",
     "deploy": "firebase deploy",
     "firebase:login": "firebase login",
