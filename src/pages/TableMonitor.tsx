@@ -616,8 +616,8 @@ export default function TableMonitor() {
                               </div>
 
                               <div className="bg-gray-50 rounded-lg p-2 text-xs text-gray-600 space-y-1">
-                                {order.items?.slice(0, 3).map(item => (
-                                  <div key={item.id} className="flex justify-between">
+                                {order.items?.slice(0, 3).map((item, idx) => (
+                                  <div key={`${order.id}-item-${idx}`} className="flex justify-between">
                                     <span className="truncate">{item.productName}</span>
                                     <span className="font-semibold">x{item.quantity}</span>
                                   </div>

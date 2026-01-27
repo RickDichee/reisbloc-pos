@@ -57,8 +57,10 @@ export default function Bar() {
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
     try {
+      logger.info('bar', `Changing order ${orderId} to ${newStatus}`)
       const order = orders.find(o => o.id === orderId)
       await supabaseService.updateOrderStatus(orderId, newStatus)
+      logger.info('bar', `✅ Order ${orderId} updated to ${newStatus}`)
       
       // Notificar cuando la orden está lista
       if (newStatus === 'ready' && order && order.tableNumber) {

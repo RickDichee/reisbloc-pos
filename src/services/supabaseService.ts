@@ -610,6 +610,7 @@ class SupabaseService {
   }
 
   async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
+    logger.info('supabase', `📝 Updating order ${orderId} status to: ${status}`)
     return this.updateOrder(orderId, { status })
   }
 
@@ -667,9 +668,14 @@ class SupabaseService {
 
   async createSale(sale: Omit<Sale, 'id'>): Promise<string> {
     try {
+      // Remove timestamp fields (Supabase handles with triggers)
+      const payload: any = { ...sale }
+      if ('createdAt' in payload) delete payload.createdAt
+      if ('updatedAt' in payload) delete payload.updatedAt
+      
       const { data, error } = await supabase
         .from('sales')
-        .insert([sale])
+        .insert([payload])
         .select('id')
         .single()
 
@@ -728,14 +734,18 @@ class SupabaseService {
           schema: 'public',
           table: 'orders'
         },
-        () => {
+        (payload) => {
+          logger.info('supabase', '🔔 Realtime event received:', payload.eventType)
           // Cuando hay cambios, recargar todas las órdenes activas
           this.getActiveOrders().then(callback)
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        logger.info('supabase', `📡 Subscription status: ${status}`)
+      })
 
     return () => {
+      logger.info('supabase', '🔌 Unsubscribing from orders')
       supabase.removeChannel(channel)
     }
   }

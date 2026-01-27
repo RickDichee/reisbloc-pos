@@ -22,8 +22,8 @@ export async function sendNotificationToUsers(params: SendNotificationParams): P
     await sendNotification(params)
     logger.info('notification', 'Notificación enviada')
   } catch (error) {
-    // Deshabilitar fallback a Firestore durante migración a Supabase
-    logger.warn('notification', 'Cloud Function no disponible. Fallback a Firestore deshabilitado durante migración a Supabase.', error as any)
+    // Silently fail during Supabase migration - notifications will be re-enabled later
+    logger.warn('notification', '⚠️ Notificaciones deshabilitadas temporalmente (migrando a Supabase)')
     return
   }
 }
