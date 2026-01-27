@@ -186,26 +186,28 @@ export default function TableMonitor() {
   }
 
   const printSplitTickets = async (splitData: SplitPayment[], tableNumber: number) => {
+    const safeTableNumber = tableNumber || 0 // Fallback for orders without table number
+    
     for (const split of splitData) {
       const personaLabel = `Persona ${split.personNumber}`
 
       try {
-        const customerHTML = buildSplitTicketHTML(split, tableNumber, `Cuenta · ${personaLabel}`)
+        const customerHTML = buildSplitTicketHTML(split, safeTableNumber, `Cuenta · ${personaLabel}`)
         await printService.printReceipt(customerHTML, { title: `Cuenta ${personaLabel}`, width: 58 })
       } catch (err) {
         // printService already logs errors
       }
 
       try {
-        const kitchenHTML = buildSplitTicketHTML(split, tableNumber, `Cocina · ${personaLabel}`)
-        await printService.printKitchenTicket(kitchenHTML, { title: `Cocina Mesa ${tableNumber}`, width: 58 })
+        const kitchenHTML = buildSplitTicketHTML(split, safeTableNumber, `Cocina · ${personaLabel}`)
+        await printService.printKitchenTicket(kitchenHTML, { title: `Cocina Mesa ${safeTableNumber || 'N/A'}`, width: 58 })
       } catch (err) {
         // printService already logs errors
       }
 
       try {
-        const barHTML = buildSplitTicketHTML(split, tableNumber, `Bar · ${personaLabel}`)
-        await printService.printKitchenTicket(barHTML, { title: `Bar Mesa ${tableNumber}`, width: 58 })
+        const barHTML = buildSplitTicketHTML(split, safeTableNumber, `Bar · ${personaLabel}`)
+        await printService.printKitchenTicket(barHTML, { title: `Bar Mesa ${safeTableNumber || 'N/A'}`, width: 58 })
       } catch (err) {
         // printService already logs errors
       }
@@ -393,9 +395,7 @@ export default function TableMonitor() {
         tax: 0,
         total: result.total,
         paymentMethod: mappedMethod as any,
-        currency: result.currency || 'MXN',
         tip: result.tip,
-        tipCurrency: result.tipCurrency || 'MXN',
         tipSource: result.tip > 0 ? (mappedMethod === 'cash' ? 'cash' : 'digital') : 'none',
         saleBy: currentUser.id,
         createdAt: new Date(),
