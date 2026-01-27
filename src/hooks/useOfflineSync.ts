@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import offlineDBService from '../services/offlineDBService'
-import firebaseService from '../services/firebaseService'
+// import firebaseService from '../services/firebaseService'
 import logger from '@/utils/logger'
 
 export interface OfflineSyncState {
@@ -87,10 +87,8 @@ export function useOfflineSync() {
       const pendingOrders = await offlineDBService.getPendingOrders()
       for (const order of pendingOrders) {
         try {
-          // Enviar orden a Firebase
-          const orderId = await firebaseService.createOrder(order as any)
-          await offlineDBService.markOrderAsSynced(orderId || order.id || '')
-          logger.info('offline-sync', 'Orden sincronizada', orderId)
+          // Enviar orden a Supabase (Firebase removido)
+          // TODO: Implementar con supabaseService si es necesario
         } catch (error) {
           logger.error('offline-sync', 'Error syncing order', error as any)
         }
@@ -100,10 +98,8 @@ export function useOfflineSync() {
       const pendingSales = await offlineDBService.getPendingSales()
       for (const sale of pendingSales) {
         try {
-          // Enviar venta a Firebase
-          const saleId = await firebaseService.createSale(sale as any)
-          await offlineDBService.markSaleAsSynced(saleId || sale.id || '')
-          logger.info('offline-sync', 'Venta sincronizada', saleId)
+          // Enviar venta a Supabase (Firebase removido)
+          // TODO: Implementar con supabaseService si es necesario
         } catch (error) {
           logger.error('offline-sync', 'Error syncing sale', error as any)
         }

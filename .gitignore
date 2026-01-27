@@ -1,3 +1,6 @@
+# Ignorar archivos de entorno de producción y desarrollo
+.env.production
+.env.local
 # Dependencies
 node_modules/
 
@@ -7,6 +10,9 @@ dist/
 # Environment files
 .env.local
 .env.*.local
+
+# Producción
+.env.production
 
 # Firebase
 .firebase/

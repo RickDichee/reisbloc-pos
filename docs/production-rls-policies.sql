@@ -11,14 +11,14 @@
 -- ORDERS TABLE - PRODUCTION POLICIES
 -- ============================================================================
 
--- Only enable read access for orders
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
--- Mesero: Can ONLY see/create own orders
+DROP POLICY IF EXISTS "orders_mesero_read" ON orders;
 CREATE POLICY "orders_mesero_read" ON orders
   FOR SELECT
   USING (auth.uid() = created_by);
 
+DROP POLICY IF EXISTS "orders_mesero_insert" ON orders;
 CREATE POLICY "orders_mesero_insert" ON orders
   FOR INSERT
   WITH CHECK (
@@ -27,6 +27,7 @@ CREATE POLICY "orders_mesero_insert" ON orders
   );
 
 -- Cocina: Can see all orders for their establishment
+DROP POLICY IF EXISTS "orders_cocina_read" ON orders;
 CREATE POLICY "orders_cocina_read" ON orders
   FOR SELECT
   USING (
@@ -34,6 +35,7 @@ CREATE POLICY "orders_cocina_read" ON orders
   );
 
 -- Cocina: Can only update status (not delete or modify amounts)
+DROP POLICY IF EXISTS "orders_cocina_update" ON orders;
 CREATE POLICY "orders_cocina_update" ON orders
   FOR UPDATE
   USING (
@@ -46,6 +48,7 @@ CREATE POLICY "orders_cocina_update" ON orders
   );
 
 -- Capitan: Can see all orders
+DROP POLICY IF EXISTS "orders_capitan_read" ON orders;
 CREATE POLICY "orders_capitan_read" ON orders
   FOR SELECT
   USING (
@@ -53,6 +56,7 @@ CREATE POLICY "orders_capitan_read" ON orders
   );
 
 -- Capitan: Can only update status to completed for payment
+DROP POLICY IF EXISTS "orders_capitan_update" ON orders;
 CREATE POLICY "orders_capitan_update" ON orders
   FOR UPDATE
   USING (
@@ -65,6 +69,7 @@ CREATE POLICY "orders_capitan_update" ON orders
   );
 
 -- Admin: Full access
+DROP POLICY IF EXISTS "orders_admin_all" ON orders;
 CREATE POLICY "orders_admin_all" ON orders
   FOR ALL
   USING (
@@ -78,6 +83,7 @@ CREATE POLICY "orders_admin_all" ON orders
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
 -- Only Capitan can insert sales (payment records)
+DROP POLICY IF EXISTS "sales_capitan_insert" ON sales;
 CREATE POLICY "sales_capitan_insert" ON sales
   FOR INSERT
   WITH CHECK (
@@ -87,6 +93,7 @@ CREATE POLICY "sales_capitan_insert" ON sales
   );
 
 -- All roles can read sales related to their orders
+DROP POLICY IF EXISTS "sales_read_own" ON sales;
 CREATE POLICY "sales_read_own" ON sales
   FOR SELECT
   USING (
@@ -95,6 +102,7 @@ CREATE POLICY "sales_read_own" ON sales
   );
 
 -- Only Capitan can update own sales records
+DROP POLICY IF EXISTS "sales_capitan_update" ON sales;
 CREATE POLICY "sales_capitan_update" ON sales
   FOR UPDATE
   USING (
@@ -108,6 +116,7 @@ CREATE POLICY "sales_capitan_update" ON sales
   );
 
 -- Admin: Full access
+DROP POLICY IF EXISTS "sales_admin_all" ON sales;
 CREATE POLICY "sales_admin_all" ON sales
   FOR ALL
   USING (
@@ -121,17 +130,20 @@ CREATE POLICY "sales_admin_all" ON sales
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Users can read own notifications
+DROP POLICY IF EXISTS "notifications_read_own" ON notifications;
 CREATE POLICY "notifications_read_own" ON notifications
   FOR SELECT
   USING (user_id = auth.uid());
 
 -- Users can update own notifications (mark as read)
+DROP POLICY IF EXISTS "notifications_update_own" ON notifications;
 CREATE POLICY "notifications_update_own" ON notifications
   FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- System can create notifications (via service role)
+DROP POLICY IF EXISTS "notifications_insert_system" ON notifications;
 CREATE POLICY "notifications_insert_system" ON notifications
   FOR INSERT
   WITH CHECK (true);  -- Will be called via service role
@@ -143,11 +155,13 @@ CREATE POLICY "notifications_insert_system" ON notifications
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own audit logs
+DROP POLICY IF EXISTS "audit_logs_read_own" ON audit_logs;
 CREATE POLICY "audit_logs_read_own" ON audit_logs
   FOR SELECT
   USING (user_id = auth.uid());
 
 -- Admin can read all audit logs
+DROP POLICY IF EXISTS "audit_logs_read_admin" ON audit_logs;
 CREATE POLICY "audit_logs_read_admin" ON audit_logs
   FOR SELECT
   USING (
@@ -155,6 +169,7 @@ CREATE POLICY "audit_logs_read_admin" ON audit_logs
   );
 
 -- System can create audit logs
+DROP POLICY IF EXISTS "audit_logs_insert_system" ON audit_logs;
 CREATE POLICY "audit_logs_insert_system" ON audit_logs
   FOR INSERT
   WITH CHECK (true);  -- Will be called via trigger/service role
@@ -166,11 +181,13 @@ CREATE POLICY "audit_logs_insert_system" ON audit_logs
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Users can read own profile
+DROP POLICY IF EXISTS "users_read_own" ON users;
 CREATE POLICY "users_read_own" ON users
   FOR SELECT
   USING (id = auth.uid());
 
 -- Admin can read all users
+DROP POLICY IF EXISTS "users_read_admin" ON users;
 CREATE POLICY "users_read_admin" ON users
   FOR SELECT
   USING (
@@ -178,6 +195,7 @@ CREATE POLICY "users_read_admin" ON users
   );
 
 -- Users can update own profile (except role)
+DROP POLICY IF EXISTS "users_update_own" ON users;
 CREATE POLICY "users_update_own" ON users
   FOR UPDATE
   USING (id = auth.uid())
@@ -187,6 +205,7 @@ CREATE POLICY "users_update_own" ON users
   );
 
 -- Admin can update users
+DROP POLICY IF EXISTS "users_update_admin" ON users;
 CREATE POLICY "users_update_admin" ON users
   FOR UPDATE
   USING (
@@ -200,11 +219,13 @@ CREATE POLICY "users_update_admin" ON users
 ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
 
 -- Users can read devices assigned to them
+DROP POLICY IF EXISTS "devices_read_own" ON devices;
 CREATE POLICY "devices_read_own" ON devices
   FOR SELECT
   USING (user_id = auth.uid());
 
 -- Admin can read all devices
+DROP POLICY IF EXISTS "devices_read_admin" ON devices;
 CREATE POLICY "devices_read_admin" ON devices
   FOR SELECT
   USING (
@@ -212,6 +233,7 @@ CREATE POLICY "devices_read_admin" ON devices
   );
 
 -- Admin can update devices
+DROP POLICY IF EXISTS "devices_update_admin" ON devices;
 CREATE POLICY "devices_update_admin" ON devices
   FOR UPDATE
   USING (
@@ -225,17 +247,20 @@ CREATE POLICY "devices_update_admin" ON devices
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
 -- All authenticated users can read products
+DROP POLICY IF EXISTS "products_read_all" ON products;
 CREATE POLICY "products_read_all" ON products
   FOR SELECT
   USING (true);
 
 -- Only admin can modify products
+DROP POLICY IF EXISTS "products_admin_insert" ON products;
 CREATE POLICY "products_admin_insert" ON products
   FOR INSERT
   WITH CHECK (
     (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
+DROP POLICY IF EXISTS "products_admin_update" ON products;
 CREATE POLICY "products_admin_update" ON products
   FOR UPDATE
   USING (
@@ -249,6 +274,7 @@ CREATE POLICY "products_admin_update" ON products
 ALTER TABLE closings ENABLE ROW LEVEL SECURITY;
 
 -- Users can read closings
+DROP POLICY IF EXISTS "closings_read_own" ON closings;
 CREATE POLICY "closings_read_own" ON closings
   FOR SELECT
   USING (
@@ -257,6 +283,7 @@ CREATE POLICY "closings_read_own" ON closings
   );
 
 -- Only Capitan can create closings
+DROP POLICY IF EXISTS "closings_insert_capitan" ON closings;
 CREATE POLICY "closings_insert_capitan" ON closings
   FOR INSERT
   WITH CHECK (
@@ -265,6 +292,7 @@ CREATE POLICY "closings_insert_capitan" ON closings
   );
 
 -- Admin: Full access
+DROP POLICY IF EXISTS "closings_admin_all" ON closings;
 CREATE POLICY "closings_admin_all" ON closings
   FOR ALL
   USING (

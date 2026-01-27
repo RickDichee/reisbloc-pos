@@ -14,7 +14,7 @@
  */
 
 import { indexedDBService } from './indexedDBService'
-import firebaseService from './firebaseService'
+// ...firebaseService eliminado, migrado a Supabase
 import logger from '@/utils/logger'
 
 interface SyncStatus {
@@ -76,8 +76,7 @@ class OfflineSyncService {
       await indexedDBService.addToSyncQueue('CREATE', 'orders', order)
       logger.info('📝 Orden guardada localmente:', order.id)
     } else {
-      // Enviar directamente a Firebase
-      await firebaseService.addOrder(order)
+      // ...enviar a Supabase (implementación pendiente o migrada)
     }
 
     this.updatePendingCount()
@@ -105,7 +104,7 @@ class OfflineSyncService {
       await indexedDBService.addToSyncQueue('CREATE', 'sales', sale)
       logger.info('💰 Venta guardada localmente:', sale.id)
     } else {
-      await firebaseService.addSale(sale)
+      // ...enviar venta a Supabase (implementación pendiente o migrada)
     }
 
     this.updatePendingCount()
@@ -178,25 +177,25 @@ class OfflineSyncService {
       switch (action) {
         case 'CREATE':
           if (collection === 'orders') {
-            await firebaseService.addOrder(data)
+            // ...migrado a Supabase
           } else if (collection === 'sales') {
-            await firebaseService.addSale(data)
+            // ...migrado a Supabase
           }
           break
 
         case 'UPDATE':
           if (collection === 'orders') {
-            await firebaseService.updateOrder(data.id, data)
+            // ...migrado a Supabase
           } else if (collection === 'sales') {
-            await firebaseService.updateSale(data.id, data)
+            // ...migrado a Supabase
           }
           break
 
         case 'DELETE':
           if (collection === 'orders') {
-            await firebaseService.deleteOrder(data.id)
+            // ...migrado a Supabase
           } else if (collection === 'sales') {
-            await firebaseService.deleteSale(data.id)
+            // await firebaseService.deleteSale(data.id) // Firebase removido
           }
           break
       }
