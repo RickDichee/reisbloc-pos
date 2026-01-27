@@ -364,13 +364,26 @@ export default function TableMonitor() {
   const handlePaymentComplete = async (result: PaymentResult) => {
     if (!currentUser || !paymentOrder) return
 
-    // Validar que tableNumber es válido (no 0)
-    if (!paymentOrder.tableNumber || paymentOrder.tableNumber <= 0) {
-      const errorMsg = 'Error: Número de mesa inválido'
-      logger.error('payment', errorMsg)
-      alert(`❌ ${errorMsg}`)
-      setError(errorMsg)
-      return
+    // Validar que tableNumber es válido; si viene 0/intdefined, intentar recuperarlo desde las órdenes
+    let tableNumber = paymentOrder.tableNumber
+    if (!tableNumber || tableNumber <= 0) {
+      const recovered = orders.find(o => paymentOrder.ids.includes(o.id))?.tableNumber
+      if (recovered && recovered > 0) {
+        tableNumber = recovered
+        logger.warn('payment', 'Recuperado tableNumber desde órdenes activas', {
+          tableNumber,
+          orderIds: paymentOrder.ids,
+        })
+      } else {
+        const errorMsg = 'Error: Número de mesa inválido'
+        logger.error('payment', errorMsg, {
+          paymentOrder,
+          recoveredTable: recovered,
+        })
+        alert(`❌ ${errorMsg}`)
+        setError(errorMsg)
+        return
+      }
     }
 
     // Si se solicita dividir cuenta
@@ -402,7 +415,7 @@ export default function TableMonitor() {
       // Create a single sale for all orders
       await supabaseService.createSale({
         orderIds,
-        tableNumber: paymentOrder.tableNumber,
+        tableNumber,
         items: allItems,
         subtotal,
         discounts: 0,
@@ -416,7 +429,7 @@ export default function TableMonitor() {
       } as any)
 
       logger.info('payment', 'Sale created, printing table...')
-      await handlePrintTable(ordersToProcess, paymentOrder.tableNumber, 'Ticket de Pago')
+  await handlePrintTable(ordersToProcess, tableNumber, 'Ticket de Pago')
 
       logger.info('payment', 'Closing orders...')
       // Close all orders

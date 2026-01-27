@@ -471,7 +471,14 @@ class SupabaseService {
   private buildOrderPayload(order: Partial<Order> & Record<string, any>) {
     const payload: any = { ...order }
 
-    if ('tableNumber' in order) payload.table_number = order.tableNumber
+    // Validar tableNumber si está presente (debe ser > 0)
+    if ('tableNumber' in order) {
+      const tableNum = order.tableNumber
+      if (tableNum === null || tableNum === undefined || tableNum <= 0) {
+        throw new Error(`Invalid table number: ${tableNum}. Must be greater than 0.`)
+      }
+      payload.table_number = tableNum
+    }
     if ('waiterId' in order) payload.waiter_id = (order as any).waiterId
     if ('createdBy' in order) payload.created_by = (order as any).createdBy
     if ('status' in order) payload.status = this.normalizeOrderStatus((order as any).status)
@@ -554,8 +561,18 @@ class SupabaseService {
         throw error
       }
       
-      logger.info('supabase', `✅ Found ${data?.length || 0} active orders`)
-      return (data || []) as Order[]
+      const normalized = (data || []).map((o: any) => ({
+        ...o,
+        tableNumber: o.table_number ?? o.tableNumber ?? 0,
+      }))
+
+      logger.info('supabase', `✅ Found ${normalized.length} active orders`)
+     // Log table_number para cada orden
+     if (normalized.length > 0) {
+       const tableNumbers = normalized.map((o: any) => ({ id: o.id, table_number: o.tableNumber }))
+       logger.info('supabase', `📊 Order table numbers:`, tableNumbers)
+     }
+      return normalized as Order[]
     }).catch(error => {
       logger.error('supabase', 'Error getting active orders', error as any)
       return []
@@ -696,11 +713,10 @@ class SupabaseService {
       logger.info('supabase', '   - payment_method:', payload.payment_method)
       logger.info('supabase', '   - items count:', payload.items?.length || 0)
       
-      const { data, error } = await supabase
+      // Use returning: 'minimal' to avoid SELECT and bypass RLS on select
+      const { error } = await supabase
         .from('sales')
-        .insert([payload])
-        .select('id')
-        .single()
+        .insert([payload], { returning: 'minimal' })
 
       if (error) {
         logger.error('supabase', '❌ Supabase insert error:', {
@@ -713,8 +729,8 @@ class SupabaseService {
         throw new Error(`Supabase error: ${error.message} ${error.details ? '- ' + error.details : ''} ${error.hint ? '- ' + error.hint : ''}`)
       }
       
-      logger.info('supabase', '✅ Sale created successfully:', data.id)
-      return data.id
+      logger.info('supabase', '✅ Sale created successfully (no returning id)')
+      return payload.order_id || ''
     } catch (error: any) {
       logger.error('supabase', '❌ Error creating sale:', error?.message || String(error))
       throw error
