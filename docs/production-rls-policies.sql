@@ -17,30 +17,30 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 -- Mesero: Can ONLY see/create own orders
 CREATE POLICY "orders_mesero_read" ON orders
   FOR SELECT
-  USING (auth.uid()::text = created_by);
+  USING (auth.uid() = created_by);
 
 CREATE POLICY "orders_mesero_insert" ON orders
   FOR INSERT
   WITH CHECK (
-    auth.uid()::text = created_by
-    AND (SELECT role FROM users WHERE id = auth.uid()::text) = 'mesero'
+    auth.uid() = created_by
+    AND (SELECT role FROM users WHERE id = auth.uid()) = 'mesero'
   );
 
 -- Cocina: Can see all orders for their establishment
 CREATE POLICY "orders_cocina_read" ON orders
   FOR SELECT
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'cocina'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'cocina'
   );
 
 -- Cocina: Can only update status (not delete or modify amounts)
 CREATE POLICY "orders_cocina_update" ON orders
   FOR UPDATE
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'cocina'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'cocina'
   )
   WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'cocina'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'cocina'
     AND status IN ('ready', 'served', 'cancelled')
     AND total = (SELECT total FROM orders WHERE id = orders.id)  -- Prevent amount modification
   );
@@ -49,17 +49,17 @@ CREATE POLICY "orders_cocina_update" ON orders
 CREATE POLICY "orders_capitan_read" ON orders
   FOR SELECT
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
   );
 
 -- Capitan: Can only update status to completed for payment
 CREATE POLICY "orders_capitan_update" ON orders
   FOR UPDATE
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
   )
   WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
     AND status IN ('completed', 'cancelled')
     AND total = (SELECT total FROM orders WHERE id = orders.id)  -- Prevent amount modification
   );
@@ -68,7 +68,7 @@ CREATE POLICY "orders_capitan_update" ON orders
 CREATE POLICY "orders_admin_all" ON orders
   FOR ALL
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
@@ -81,37 +81,37 @@ ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "sales_capitan_insert" ON sales
   FOR INSERT
   WITH CHECK (
-    auth.uid()::text = registered_by
-    AND (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
-    AND amount > 0  -- Prevent zero-value sales
+    auth.uid() = waiter_id
+    AND (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
+    AND total > 0  -- Prevent zero-value sales
   );
 
 -- All roles can read sales related to their orders
 CREATE POLICY "sales_read_own" ON sales
   FOR SELECT
   USING (
-    (SELECT created_by FROM orders WHERE id = order_id) = auth.uid()::text
-    OR (SELECT role FROM users WHERE id = auth.uid()::text) IN ('admin', 'capitan', 'cocina')
+    (SELECT created_by FROM orders WHERE id = order_id) = auth.uid()
+    OR (SELECT role FROM users WHERE id = auth.uid()) IN ('admin', 'capitan', 'cocina')
   );
 
 -- Only Capitan can update own sales records
 CREATE POLICY "sales_capitan_update" ON sales
   FOR UPDATE
   USING (
-    auth.uid()::text = registered_by
-    AND (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
+    auth.uid() = waiter_id
+    AND (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
   )
   WITH CHECK (
-    auth.uid()::text = registered_by
-    AND (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
-    AND amount = (SELECT amount FROM sales WHERE id = sales.id)  -- Prevent amount modification
+    auth.uid() = waiter_id
+    AND (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
+    AND total = (SELECT total FROM sales WHERE id = sales.id)  -- Prevent amount modification
   );
 
 -- Admin: Full access
 CREATE POLICY "sales_admin_all" ON sales
   FOR ALL
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
@@ -123,13 +123,13 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 -- Users can read own notifications
 CREATE POLICY "notifications_read_own" ON notifications
   FOR SELECT
-  USING (recipient_id = auth.uid()::text);
+  USING (user_id = auth.uid());
 
 -- Users can update own notifications (mark as read)
 CREATE POLICY "notifications_update_own" ON notifications
   FOR UPDATE
-  USING (recipient_id = auth.uid()::text)
-  WITH CHECK (recipient_id = auth.uid()::text);
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
 
 -- System can create notifications (via service role)
 CREATE POLICY "notifications_insert_system" ON notifications
@@ -145,13 +145,13 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 -- Users can read their own audit logs
 CREATE POLICY "audit_logs_read_own" ON audit_logs
   FOR SELECT
-  USING (user_id = auth.uid()::text);
+  USING (user_id = auth.uid());
 
 -- Admin can read all audit logs
 CREATE POLICY "audit_logs_read_admin" ON audit_logs
   FOR SELECT
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- System can create audit logs
@@ -168,21 +168,21 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 -- Users can read own profile
 CREATE POLICY "users_read_own" ON users
   FOR SELECT
-  USING (id = auth.uid()::text);
+  USING (id = auth.uid());
 
 -- Admin can read all users
 CREATE POLICY "users_read_admin" ON users
   FOR SELECT
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- Users can update own profile (except role)
 CREATE POLICY "users_update_own" ON users
   FOR UPDATE
-  USING (id = auth.uid()::text)
+  USING (id = auth.uid())
   WITH CHECK (
-    id = auth.uid()::text
+    id = auth.uid()
     AND role = (SELECT role FROM users WHERE id = users.id)  -- Prevent role modification
   );
 
@@ -190,7 +190,7 @@ CREATE POLICY "users_update_own" ON users
 CREATE POLICY "users_update_admin" ON users
   FOR UPDATE
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
@@ -202,20 +202,20 @@ ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
 -- Users can read devices assigned to them
 CREATE POLICY "devices_read_own" ON devices
   FOR SELECT
-  USING (assigned_to = auth.uid()::text);
+  USING (user_id = auth.uid());
 
 -- Admin can read all devices
 CREATE POLICY "devices_read_admin" ON devices
   FOR SELECT
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- Admin can update devices
 CREATE POLICY "devices_update_admin" ON devices
   FOR UPDATE
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
@@ -233,13 +233,13 @@ CREATE POLICY "products_read_all" ON products
 CREATE POLICY "products_admin_insert" ON products
   FOR INSERT
   WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 CREATE POLICY "products_admin_update" ON products
   FOR UPDATE
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
@@ -252,23 +252,23 @@ ALTER TABLE closings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "closings_read_own" ON closings
   FOR SELECT
   USING (
-    created_by = auth.uid()::text
-    OR (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    closed_by = auth.uid()
+    OR (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- Only Capitan can create closings
 CREATE POLICY "closings_insert_capitan" ON closings
   FOR INSERT
   WITH CHECK (
-    created_by = auth.uid()::text
-    AND (SELECT role FROM users WHERE id = auth.uid()::text) = 'capitan'
+    closed_by = auth.uid()
+    AND (SELECT role FROM users WHERE id = auth.uid()) = 'capitan'
   );
 
 -- Admin: Full access
 CREATE POLICY "closings_admin_all" ON closings
   FOR ALL
   USING (
-    (SELECT role FROM users WHERE id = auth.uid()::text) = 'admin'
+    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
   );
 
 -- ============================================================================
