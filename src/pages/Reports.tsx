@@ -84,86 +84,16 @@ export default function Reports() {
           transactions: sales.length,
         }))
 
-      // Top productos a partir de items en sales
-      const productMap: Record<string, { name: string; qty: number; total: number }> = {}
-      sales.forEach((sale: any) => {
-        ;(sale.items || []).forEach((item: any) => {
-          const pid = item.productId || item.product_id || item.id
-          const pname = item.productName || item.name || 'Producto'
-          if (!productMap[pid]) productMap[pid] = { name: pname, qty: 0, total: 0 }
-          productMap[pid].qty += Number(item.quantity || 0)
-          productMap[pid].total += Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0)
-        })
-      })
-      const products = Object.values(productMap)
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5)
-        .map((p, i) => ({ id: i, ...p }))
-
-      // Métricas por empleado (mesero)
-      const users = await supabaseService.getAllUsers()
-      const byUser: Record<string, any> = {}
-      users.forEach(u => {
-        byUser[u.id] = {
-          userId: u.id,
-          userName: (u as any).username || (u as any).name || 'Usuario',
-          role: u.role,
-          salesCount: 0,
-          totalSales: 0,
-          totalTips: 0,
-          averageTicket: 0,
-          averageTip: 0,
-        }
-      })
-      sales.forEach((sale: any) => {
-        const uid = sale.waiter_id || sale.saleBy
-        if (uid && byUser[uid]) {
-          byUser[uid].salesCount += 1
-          byUser[uid].totalSales += Number(sale.total || 0)
-          byUser[uid].totalTips += Number(sale.tip_amount || sale.tip || 0)
-        }
-      })
-      const employees = Object.values(byUser)
-        .filter((m: any) => m.salesCount > 0)
-        .map((m: any) => ({
-          ...m,
-          averageTicket: m.salesCount ? m.totalSales / m.salesCount : 0,
-          averageTip: m.salesCount ? m.totalTips / m.salesCount : 0,
-        }))
-        .sort((a: any, b: any) => b.totalSales - a.totalSales)
-
-      // Métricas generales
-      const metricsData = sales.reduce(
-        (acc: any, sale: any) => {
-          const total = Number(sale.total || 0)
-          const tip = Number(sale.tip_amount || sale.tip || 0)
-          acc.totalSales += total
-          acc.totalTips += tip
-          acc.transactionCount += 1
-          const method = (sale.payment_method || '').toLowerCase()
-          if (method === 'cash') acc.totalCash += total
-          else if (method === 'digital') acc.totalDigital += total
-          else if (method === 'clip') acc.totalClip += total
-          return acc
-        },
-        {
-          totalSales: 0,
-          totalCash: 0,
-          totalDigital: 0,
-          totalClip: 0,
-          totalTips: 0,
-          totalDiscounts: 0,
-          transactionCount: 0,
-          averageTicket: 0,
-        }
-      )
-      metricsData.averageTicket = metricsData.transactionCount
-        ? metricsData.totalSales / metricsData.transactionCount
-        : 0
+      // Usar los nuevos métodos de agregación
+      const [topProductsData, employeeMetricsData, metricsData] = await Promise.all([
+        supabaseService.getTopProducts(startDate, endDate, 5),
+        supabaseService.getEmployeeMetrics(startDate, endDate),
+        supabaseService.getSalesMetrics(startDate, endDate),
+      ])
 
       setSalesData(chartData)
-      setTopProducts(products)
-      setEmployeeMetrics(employees)
+      setTopProducts(topProductsData)
+      setEmployeeMetrics(employeeMetricsData)
       setMetrics(metricsData)
     } catch (error) {
       console.error('Error loading reports:', error)

@@ -947,6 +947,130 @@ class SupabaseService {
       supabase.removeChannel(channel)
     }
   }
+  async getSalesMetrics(
+    startDate: Date,
+    endDate: Date
+  ): Promise<{
+    totalSales: number
+    totalCash: number
+    totalDigital: number
+    totalClip: number
+    totalTips: number
+    transactionCount: number
+    averageTicket: number
+  }> {
+    try {
+      const sales = await this.getSalesByDateRange(startDate, endDate)
+
+      const metrics = sales.reduce(
+        (acc: any, sale: any) => {
+          const total = Number(sale.total || 0)
+          const tip = Number(sale.tip_amount || sale.tip || 0)
+          acc.totalSales += total
+          acc.totalTips += tip
+          acc.transactionCount += 1
+          const method = (sale.payment_method || '').toLowerCase()
+          if (method === 'cash') acc.totalCash += total
+          else if (method === 'digital') acc.totalDigital += total
+          else if (method === 'clip') acc.totalClip += total
+          return acc
+        },
+        {
+          totalSales: 0,
+          totalCash: 0,
+          totalDigital: 0,
+          totalClip: 0,
+          totalTips: 0,
+          transactionCount: 0,
+          averageTicket: 0,
+        }
+      )
+
+      metrics.averageTicket = metrics.transactionCount
+        ? metrics.totalSales / metrics.transactionCount
+        : 0
+
+      return metrics
+    } catch (error) {
+      logger.error('supabase', 'Error calculating sales metrics', error as any)
+      return {
+        totalSales: 0,
+        totalCash: 0,
+        totalDigital: 0,
+        totalClip: 0,
+        totalTips: 0,
+        transactionCount: 0,
+        averageTicket: 0,
+      }
+    }
+  }
+
+  async getTopProducts(startDate: Date, endDate: Date, limit: number = 5): Promise<any[]> {
+    try {
+      const sales = await this.getSalesByDateRange(startDate, endDate)
+
+      const productMap: Record<string, { name: string; qty: number; total: number }> = {}
+      sales.forEach((sale: any) => {
+        ;(sale.items || []).forEach((item: any) => {
+          const pid = item.productId || item.product_id || item.id
+          const pname = item.productName || item.name || 'Producto'
+          if (!productMap[pid]) productMap[pid] = { name: pname, qty: 0, total: 0 }
+          productMap[pid].qty += Number(item.quantity || 0)
+          productMap[pid].total += Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0)
+        })
+      })
+
+      return Object.values(productMap)
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, limit)
+        .map((p, i) => ({ id: i, ...p }))
+    } catch (error) {
+      logger.error('supabase', 'Error getting top products', error as any)
+      return []
+    }
+  }
+
+  async getEmployeeMetrics(startDate: Date, endDate: Date): Promise<any[]> {
+    try {
+      const sales = await this.getSalesByDateRange(startDate, endDate)
+      const users = await this.getAllUsers()
+
+      const byUser: Record<string, any> = {}
+      users.forEach((u: any) => {
+        byUser[u.id] = {
+          userId: u.id,
+          userName: (u as any).username || (u as any).name || 'Usuario',
+          role: u.role,
+          salesCount: 0,
+          totalSales: 0,
+          totalTips: 0,
+          averageTicket: 0,
+          averageTip: 0,
+        }
+      })
+
+      sales.forEach((sale: any) => {
+        const uid = sale.waiter_id || sale.saleBy
+        if (uid && byUser[uid]) {
+          byUser[uid].salesCount += 1
+          byUser[uid].totalSales += Number(sale.total || 0)
+          byUser[uid].totalTips += Number(sale.tip_amount || sale.tip || 0)
+        }
+      })
+
+      return Object.values(byUser)
+        .filter((m: any) => m.salesCount > 0)
+        .map((m: any) => ({
+          ...m,
+          averageTicket: m.salesCount ? m.totalSales / m.salesCount : 0,
+          averageTip: m.salesCount ? m.totalTips / m.salesCount : 0,
+        }))
+        .sort((a: any, b: any) => b.totalSales - a.totalSales)
+    } catch (error) {
+      logger.error('supabase', 'Error getting employee metrics', error as any)
+      return []
+    }
+  }
 }
 
 // Singleton export
