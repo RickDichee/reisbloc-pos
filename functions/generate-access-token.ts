@@ -1,8 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts'
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'dev-secret-change-in-production'
-const JWT_EXPIRY = 24 * 60 * 60 // 24 horas
+const JWT_EXPIRY = 24 * 60 * 60
 
 interface GenerateTokenRequest {
   userId: string
@@ -10,29 +9,58 @@ interface GenerateTokenRequest {
   deviceId: string
 }
 
-const encoder = new TextEncoder()
+// Simple base64url encode without external deps
+function base64url(buf: Uint8Array): string {
+  let result = ''
+  for (let i = 0; i < buf.length; i += 3) {
+    const a = buf[i]
+    const b = buf[i + 1]
+    const c = buf[i + 2]
+
+    const bitmap = (a << 16) | (b << 8) | c
+    for (let j = 18; j >= 0; j -= 6) {
+      const index = (bitmap >> j) & 63
+      result += 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'[index]
+    }
+  }
+
+  // Remove padding
+  return result.replace(/==?$/, '')
+}
 
 async function generateAccessToken(payload: GenerateTokenRequest) {
   try {
-    // Crear JWT con información del usuario
-    const jwt = await new jose.SignJWT({
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    const now = Math.floor(Date.now() / 1000)
+    const claims = btoa(JSON.stringify({
       sub: payload.userId,
       role: payload.role,
       deviceId: payload.deviceId,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRY
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .sign(encoder.encode(JWT_SECRET))
+      iat: now,
+      exp: now + JWT_EXPIRY
+    })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+    const message = `${header}.${claims}`
+
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(JWT_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message))
+    const signature = base64url(new Uint8Array(sig))
 
     return {
-      accessToken: jwt,
+      accessToken: `${message}.${signature}`,
       expiresIn: JWT_EXPIRY,
       tokenType: 'Bearer'
     }
   } catch (error) {
-    console.error('Error generando JWT:', error)
-    throw new Error(`JWT generation failed: ${error.message}`)
+    console.error('JWT error:', error)
+    throw error
   }
 }
 
