@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import logger from '@/utils/logger'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import supabaseService from '@/services/supabaseService'
@@ -270,7 +271,7 @@ export default function TableMonitor() {
   const groupedByTable = useMemo(() => {
     const map = new Map<number, Order[]>()
     orders.forEach(order => {
-      const table = order.tableNumber
+      const table = order.tableNumber || 0 // Fallback to 0 if undefined
       const list = map.get(table) || []
       map.set(table, [...list, order])
     })
@@ -278,7 +279,7 @@ export default function TableMonitor() {
     return Array.from(map.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([tableNumber, list]) => ({
-        tableNumber,
+        tableNumber: tableNumber || 0, // Ensure always a number
         orders: list.sort((a, b) => {
           const aTime = a.createdAt ? a.createdAt.getTime() : 0
           const bTime = b.createdAt ? b.createdAt.getTime() : 0
