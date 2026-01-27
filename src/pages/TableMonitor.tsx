@@ -364,6 +364,15 @@ export default function TableMonitor() {
   const handlePaymentComplete = async (result: PaymentResult) => {
     if (!currentUser || !paymentOrder) return
 
+    // Validar que tableNumber es válido (no 0)
+    if (!paymentOrder.tableNumber || paymentOrder.tableNumber <= 0) {
+      const errorMsg = 'Error: Número de mesa inválido'
+      logger.error('payment', errorMsg)
+      alert(`❌ ${errorMsg}`)
+      setError(errorMsg)
+      return
+    }
+
     // Si se solicita dividir cuenta
     if (result.splitRequested) {
       const orderToSplit = orders.find(o => paymentOrder.ids.includes(o.id))

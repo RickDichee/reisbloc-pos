@@ -668,11 +668,16 @@ class SupabaseService {
 
   async createSale(sale: Omit<Sale, 'id'>): Promise<string> {
     try {
+      // Validar tableNumber
+      if (!sale.tableNumber || sale.tableNumber <= 0) {
+        throw new Error('Table number must be greater than 0')
+      }
+
       // Map TypeScript Sale to Supabase schema with type validation
       const payload: any = {
         order_id: (sale as any).orderIds?.[0] || null,
         waiter_id: (sale as any).saleBy || null,
-        table_number: Number(sale.tableNumber) || 0,
+        table_number: Number(sale.tableNumber),
         items: sale.items || [],
         subtotal: parseFloat(String(sale.subtotal)) || 0,
         tip_amount: parseFloat(String(sale.tip || 0)) || 0,
