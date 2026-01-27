@@ -287,6 +287,13 @@ CREATE POLICY "Users can create sales"
   TO authenticated
   WITH CHECK (true);
 
+-- Allow anon role to create sales during development
+DROP POLICY IF EXISTS "Anon can create sales" ON sales;
+CREATE POLICY "Anon can create sales"
+  ON sales FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
 -- Policies para audit_logs
 DROP POLICY IF EXISTS "Audit logs are viewable by authenticated users" ON audit_logs;
 CREATE POLICY "Audit logs are viewable by authenticated users"
