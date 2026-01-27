@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   user_id UUID REFERENCES users(id),
   action VARCHAR(100) NOT NULL,
   table_name VARCHAR(100),
-  record_id UUID,
+  record_id VARCHAR(255),
   changes JSONB,
   ip_address VARCHAR(45),
   user_agent TEXT,
