@@ -22,7 +22,7 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
     // 1. Validar PIN contra Supabase
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, username, role, pin_hash')
+      .select('id, name, role, pin')
       .eq('pin', payload.pin)
       .single()
 
@@ -50,7 +50,7 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
       accessToken: data.accessToken,
       userId: user.id,
       userRole: user.role,
-      username: user.username,
+      username: user.name,
       expiresAt: Date.now() + (data.expiresIn || 3600) * 1000
     }
 
