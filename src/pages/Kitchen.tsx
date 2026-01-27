@@ -71,9 +71,9 @@ export default function Kitchen() {
       logger.info('kitchen', `✅ Order ${orderId} updated to ${newStatus}`)
       
       // Notificar cuando la orden está lista
-      if (showOrderToast('✓ Orden Lista', `Mesa ${order.tableNumber} - ${order.items?.length || 0} platillo(s)`, 5000)
-          newStatus === 'ready' && order && order.tableNumber) {
+      if (newStatus === 'ready' && order && order.tableNumber) {
         try {
+          showOrderToast('✓ Orden Lista', `Mesa ${order.tableNumber} - ${order.items?.length || 0} platillo(s)`, 5000)
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],
             title: `Orden lista - Mesa ${order.tableNumber}`,

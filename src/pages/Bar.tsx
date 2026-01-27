@@ -67,9 +67,9 @@ export default function Bar() {
       logger.info('bar', `✅ Order ${orderId} updated to ${newStatus}`)
       
       // Notificar cuando la orden está lista
-      if (showOrderToast('✓ Bebidas Listas', `Mesa ${order.tableNumber} - ${order.items?.length || 0} bebida(s)`, 5000)
-          newStatus === 'ready' && order && order.tableNumber) {
+      if (newStatus === 'ready' && order && order.tableNumber) {
         try {
+          showOrderToast('✓ Bebidas Listas', `Mesa ${order.tableNumber} - ${order.items?.length || 0} bebida(s)`, 5000)
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],
             title: `Bebidas listas - Mesa ${order.tableNumber}`,
