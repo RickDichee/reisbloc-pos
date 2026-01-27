@@ -44,13 +44,14 @@ export default function Closing() {
   const loadClosingData = async () => {
     setLoading(true)
     try {
+      // Usar UTC correctamente - obtener hoy en UTC
       const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
+      const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0))
+      const tomorrowUTC = new Date(todayUTC)
+      tomorrowUTC.setUTCDate(tomorrowUTC.getUTCDate() + 1)
 
       // Obtener ventas del día desde Supabase y calcular métricas localmente
-      const sales = await supabaseService.getSalesByDateRange(today, tomorrow)
+      const sales = await supabaseService.getSalesByDateRange(todayUTC, tomorrowUTC)
 
       // Métricas generales de cierre
       const metrics = sales.reduce(

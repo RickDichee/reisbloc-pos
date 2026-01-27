@@ -672,7 +672,7 @@ class SupabaseService {
         .from('sales')
         .select('*')
         .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .lt('created_at', endDate.toISOString())
         .order('created_at', { ascending: false })
 
       if (error) throw error

@@ -303,6 +303,12 @@ CREATE POLICY "Sales are viewable by authenticated users"
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Sales are viewable by anon users" ON sales;
+CREATE POLICY "Sales are viewable by anon users"
+  ON sales FOR SELECT
+  TO anon
+  USING (true);
+
 DROP POLICY IF EXISTS "Users can create sales" ON sales;
 CREATE POLICY "Users can create sales"
   ON sales FOR INSERT
