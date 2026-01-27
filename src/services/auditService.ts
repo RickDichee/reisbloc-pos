@@ -1,5 +1,6 @@
 // Servicio para gestión de auditoría
 import { AuditLog } from '@types/index';
+import databaseService from './databaseService'
 import logger from '@/utils/logger'
 
 class AuditService {
@@ -16,24 +17,22 @@ class AuditService {
     deviceId?: string
   ): Promise<void> {
     try {
-      const auditLog: AuditLog = {
-        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId,
+      const auditLog: Omit<AuditLog, 'id' | 'created_at'> = {
+        userId: userId || '',
         action,
         entityType,
-        entityId,
+        entityId: entityId || '',
         oldValue,
         newValue,
         ipAddress: await this.getClientIP(),
         deviceId,
-        timestamp: new Date(),
       };
 
-      // Guardar en Firebase (se implementará en firebaseService)
-      await this.saveAuditLog(auditLog);
+      // Guardar en Supabase via databaseService
+      await databaseService.createAuditLog(auditLog as any);
 
       // Log en consola para desarrollo
-      logger.info('audit', 'Audit log', auditLog)
+      logger.info('audit', `Audit log: ${action} on ${entityType}/${entityId}`)
     } catch (error) {
       logger.error('audit', 'Error logging audit', error as any);
     }
@@ -166,11 +165,10 @@ class AuditService {
   }
 
   /**
-   * Guardar audit log en Firebase
+   * Guardar audit log en Supabase
    */
   private async saveAuditLog(log: AuditLog): Promise<void> {
-    // Se implementará en firebaseService
-    // Aquí solo placeholder
+    // Se hace en logAction via databaseService.createAuditLog
   }
 
   /**
@@ -186,8 +184,44 @@ class AuditService {
       limit?: number;
     }
   ): Promise<AuditLog[]> {
-    // Se implementará en firebaseService
-    return [];
+    try {
+      // Obtener todos los logs (limit es opcional, default 100)
+      let logs = await databaseService.getAuditLogs?.(filters.limit || 100) || []
+
+      // Aplicar filtros localmente
+      if (filters.userId) {
+        logs = logs.filter((log: any) => log.user_id === filters.userId)
+      }
+      if (filters.entityType) {
+        logs = logs.filter((log: any) => log.table_name === filters.entityType)
+      }
+      if (filters.action) {
+        logs = logs.filter((log: any) => log.action === filters.action)
+      }
+      if (filters.dateFrom) {
+        logs = logs.filter((log: any) => new Date(log.created_at) >= filters.dateFrom!)
+      }
+      if (filters.dateTo) {
+        logs = logs.filter((log: any) => new Date(log.created_at) <= filters.dateTo!)
+      }
+
+      // Mapear campos de Supabase a formato local
+      return logs.map((log: any) => ({
+        id: log.id,
+        userId: log.user_id,
+        action: log.action,
+        entityType: log.table_name,
+        entityId: log.record_id,
+        oldValue: log.changes?.old,
+        newValue: log.changes?.new,
+        ipAddress: log.ip_address,
+        deviceId: undefined,
+        timestamp: new Date(log.created_at),
+      }))
+    } catch (error) {
+      logger.error('audit', 'Error getting audit logs', error as any)
+      return []
+    }
   }
 
   /**

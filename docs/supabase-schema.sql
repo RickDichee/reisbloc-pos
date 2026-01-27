@@ -329,10 +329,22 @@ CREATE POLICY "Audit logs are viewable by authenticated users"
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Audit logs are viewable by anon users" ON audit_logs;
+CREATE POLICY "Audit logs are viewable by anon users"
+  ON audit_logs FOR SELECT
+  TO anon
+  USING (true);
+
 DROP POLICY IF EXISTS "Users can create audit logs" ON audit_logs;
 CREATE POLICY "Users can create audit logs"
   ON audit_logs FOR INSERT
   TO authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anon can create audit logs" ON audit_logs;
+CREATE POLICY "Anon can create audit logs"
+  ON audit_logs FOR INSERT
+  TO anon
   WITH CHECK (true);
 
 -- Policies para closings
