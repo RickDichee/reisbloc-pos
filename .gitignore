@@ -37,3 +37,21 @@ yarn-error.log*
 
 # Credentials (keep template)
 firebase-admin-credentials.json
+
+# Android / Capacitor
+android/app/build/
+android/app/release/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+
+# Keystore (NUNCA commitear)
+*.keystore
+*.jks
+*-key.properties
+
+# Android Studio
+.idea/
+*.iml
+
