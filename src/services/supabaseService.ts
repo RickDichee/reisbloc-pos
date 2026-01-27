@@ -668,19 +668,28 @@ class SupabaseService {
 
   async createSale(sale: Omit<Sale, 'id'>): Promise<string> {
     try {
-      // Map TypeScript Sale to Supabase schema
+      // Map TypeScript Sale to Supabase schema with type validation
       const payload: any = {
-        order_id: (sale as any).orderIds?.[0] || null, // Take first order ID (sales table has singular order_id)
-        waiter_id: (sale as any).saleBy || null, // Map saleBy -> waiter_id
-        table_number: sale.tableNumber,
-        items: sale.items,
-        subtotal: sale.subtotal,
-        tip_amount: sale.tip || 0,
-        tip_percentage: 0, // Calculate if needed: Math.round((sale.tip / sale.subtotal) * 100)
-        total: sale.total,
-        payment_method: sale.paymentMethod,
-        device_id: null, // TODO: Add device tracking if needed
+        order_id: (sale as any).orderIds?.[0] || null,
+        waiter_id: (sale as any).saleBy || null,
+        table_number: Number(sale.tableNumber) || 0,
+        items: sale.items || [],
+        subtotal: parseFloat(String(sale.subtotal)) || 0,
+        tip_amount: parseFloat(String(sale.tip || 0)) || 0,
+        tip_percentage: 0,
+        total: parseFloat(String(sale.total)) || 0,
+        payment_method: String(sale.paymentMethod) || 'cash',
+        device_id: null,
       }
+      
+      logger.info('supabase', '💰 Creating sale with payload:', payload)
+      logger.info('supabase', '   - order_id:', payload.order_id)
+      logger.info('supabase', '   - waiter_id:', payload.waiter_id)
+      logger.info('supabase', '   - table_number:', payload.table_number, typeof payload.table_number)
+      logger.info('supabase', '   - subtotal:', payload.subtotal, typeof payload.subtotal)
+      logger.info('supabase', '   - total:', payload.total, typeof payload.total)
+      logger.info('supabase', '   - payment_method:', payload.payment_method)
+      logger.info('supabase', '   - items count:', payload.items?.length || 0)
       
       const { data, error } = await supabase
         .from('sales')
@@ -688,10 +697,21 @@ class SupabaseService {
         .select('id')
         .single()
 
-      if (error) throw error
+      if (error) {
+        logger.error('supabase', '❌ Supabase insert error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          statusCode: (error as any).statusCode
+        })
+        throw new Error(`Supabase error: ${error.message} ${error.details ? '- ' + error.details : ''} ${error.hint ? '- ' + error.hint : ''}`)
+      }
+      
+      logger.info('supabase', '✅ Sale created successfully:', data.id)
       return data.id
-    } catch (error) {
-      logger.error('supabase', 'Error creating sale', error as any)
+    } catch (error: any) {
+      logger.error('supabase', '❌ Error creating sale:', error?.message || String(error))
       throw error
     }
   }

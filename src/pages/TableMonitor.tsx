@@ -378,12 +378,16 @@ export default function TableMonitor() {
     setBusyOrders(prev => ({ ...prev, ...allOrdersToClose }))
     
     try {
+      logger.info('payment', `Starting payment process for ${orderIds.length} orders`)
+      
       // Consolidate all orders for the table
       const ordersToProcess = orders.filter(o => orderIds.includes(o.id))
       const allItems = ordersToProcess.flatMap(o => o.items || [])
       const subtotal = allItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
       
       const mappedMethod = result.paymentMethod === 'card' ? 'clip' : result.paymentMethod
+      
+      logger.info('payment', `Creating sale: subtotal=${subtotal}, total=${result.total}, method=${mappedMethod}`)
       
       // Create a single sale for all orders
       await supabaseService.createSale({
@@ -401,17 +405,23 @@ export default function TableMonitor() {
         createdAt: new Date(),
       } as any)
 
+      logger.info('payment', 'Sale created, printing table...')
       await handlePrintTable(ordersToProcess, paymentOrder.tableNumber, 'Ticket de Pago')
 
+      logger.info('payment', 'Closing orders...')
       // Close all orders
       for (const orderId of orderIds) {
         await supabaseService.updateOrderStatus(orderId, 'completed')
       }
       
+      logger.info('payment', 'Payment process completed successfully ✅')
       setPaymentOrder(null)
       alert('✅ Pago registrado y mesa cerrada')
     } catch (err: any) {
-      setError(err?.message || 'No se pudo registrar el pago')
+      const errorMsg = err?.message || 'No se pudo registrar el pago'
+      logger.error('payment', `Payment failed: ${errorMsg}`, err)
+      setError(errorMsg)
+      alert(`❌ Error en pago: ${errorMsg}`)
     } finally {
       setBusyOrders(prev => {
         const updated = { ...prev }
