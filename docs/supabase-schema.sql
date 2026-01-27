@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   pin VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'waiter', 'cook', 'cashier')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'capitan', 'mesero', 'cocina', 'bar', 'supervisor')),
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -172,8 +172,20 @@ CREATE POLICY "Users are viewable for login"
 DROP POLICY IF EXISTS "Users can update their own data" ON users;
 CREATE POLICY "Users can update their own data"
   ON users FOR UPDATE
-  TO authenticated
-  USING (auth.uid()::text = id::text);
+  TO authenticated, anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert users" ON users;
+CREATE POLICY "Admins can insert users"
+  ON users FOR INSERT
+  TO authenticated, anon
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can delete users" ON users;
+CREATE POLICY "Admins can delete users"
+  ON users FOR DELETE
+  TO authenticated, anon
+  USING (true);
 
 -- Policies para devices
 DROP POLICY IF EXISTS "Devices are viewable by authenticated users" ON devices;
@@ -206,6 +218,42 @@ CREATE POLICY "Products are viewable by everyone"
   ON products FOR SELECT
   TO authenticated, anon
   USING (available = true);
+
+DROP POLICY IF EXISTS "Admins can insert products" ON products;
+CREATE POLICY "Admins can insert products"
+  ON products FOR INSERT
+  TO authenticated, anon
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update products" ON products;
+CREATE POLICY "Admins can update products"
+  ON products FOR UPDATE
+  TO authenticated, anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete products" ON products;
+CREATE POLICY "Admins can delete products"
+  ON products FOR DELETE
+  TO authenticated, anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert products" ON products;
+CREATE POLICY "Admins can insert products"
+  ON products FOR INSERT
+  TO authenticated, anon
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update products" ON products;
+CREATE POLICY "Admins can update products"
+  ON products FOR UPDATE
+  TO authenticated, anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete products" ON products;
+CREATE POLICY "Admins can delete products"
+  ON products FOR DELETE
+  TO authenticated, anon
+  USING (true);
 
 -- Policies para orders
 DROP POLICY IF EXISTS "Orders are viewable by authenticated users" ON orders;

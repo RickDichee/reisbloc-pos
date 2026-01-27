@@ -101,7 +101,7 @@ class SupabaseService {
   async createUser(user: Omit<User, 'id'>): Promise<string> {
     try {
       // Map TypeScript User fields to Supabase schema
-      const { username, ...rest } = user as any
+      const { username, createdAt, ...rest } = user as any
       const supabaseUser = { ...rest, name: username }
       
       const { data, error } = await supabase
@@ -121,7 +121,7 @@ class SupabaseService {
   async updateUser(userId: string, updates: Partial<User>): Promise<void> {
     try {
       // Map TypeScript User fields to Supabase schema
-      const { username, ...rest } = updates as any
+      const { username, createdAt, ...rest } = updates as any
       const supabaseUpdates = username ? { ...rest, name: username } : rest
       
       const { error } = await supabase
@@ -382,6 +382,9 @@ class SupabaseService {
       if ('currentStock' in payload) delete payload.currentStock
       if ('hasInventory' in payload) delete payload.hasInventory
       if ('minimumStock' in payload) delete payload.minimumStock
+      // Remove timestamp fields (Supabase handles with triggers)
+      if ('createdAt' in payload) delete payload.createdAt
+      if ('updatedAt' in payload) delete payload.updatedAt
       
       const { data, error } = await supabase
         .from('products')
@@ -409,6 +412,9 @@ class SupabaseService {
       if ('currentStock' in payload) delete payload.currentStock
       if ('hasInventory' in payload) delete payload.hasInventory
       if ('minimumStock' in payload) delete payload.minimumStock
+      // Remove timestamp fields (Supabase handles with triggers)
+      if ('createdAt' in payload) delete payload.createdAt
+      if ('updatedAt' in payload) delete payload.updatedAt
       
       const { error } = await supabase
         .from('products')
@@ -536,13 +542,19 @@ class SupabaseService {
 
   async getActiveOrders(): Promise<Order[]> {
     return this.withRetry(async () => {
+      logger.info('supabase', '🔍 Getting active orders...')
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .in('status', ['sent', 'preparing', 'ready', 'served'])
         .order('created_at', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        logger.error('supabase', 'Error in getActiveOrders query', error)
+        throw error
+      }
+      
+      logger.info('supabase', `✅ Found ${data?.length || 0} active orders`)
       return (data || []) as Order[]
     }).catch(error => {
       logger.error('supabase', 'Error getting active orders', error as any)
@@ -702,6 +714,11 @@ class SupabaseService {
   // ==================== REAL-TIME SUBSCRIPTIONS ====================
 
   subscribeToOrders(callback: (orders: Order[]) => void) {
+    // Initial load
+    this.getActiveOrders().then(callback).catch(err => {
+      logger.error('supabase', 'Error loading initial orders', err)
+    })
+
     const channel = supabase
       .channel('orders_changes')
       .on(

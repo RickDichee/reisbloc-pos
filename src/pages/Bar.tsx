@@ -61,7 +61,7 @@ export default function Bar() {
       await supabaseService.updateOrderStatus(orderId, newStatus)
       
       // Notificar cuando la orden está lista
-      if (newStatus === 'ready' && order) {
+      if (newStatus === 'ready' && order && order.tableNumber) {
         try {
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],
@@ -71,7 +71,7 @@ export default function Bar() {
             priority: 'high',
             data: {
               orderId,
-              tableNumber: order.tableNumber.toString()
+              tableNumber: String(order.tableNumber)
             }
           })
         } catch (notifError) {

@@ -65,7 +65,7 @@ export default function Kitchen() {
       await supabaseService.updateOrderStatus(orderId, newStatus)
       
       // Notificar cuando la orden está lista
-      if (newStatus === 'ready' && order) {
+      if (newStatus === 'ready' && order && order.tableNumber) {
         try {
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],
@@ -75,7 +75,7 @@ export default function Kitchen() {
             priority: 'high',
             data: {
               orderId,
-              tableNumber: order.tableNumber.toString()
+              tableNumber: String(order.tableNumber)
             }
           })
         } catch (notifError) {
