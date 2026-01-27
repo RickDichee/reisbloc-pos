@@ -741,11 +741,24 @@ class SupabaseService {
 
   async createAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>): Promise<void> {
     try {
+      // Mapear campos camelCase a snake_case del schema Supabase
+      const payload = {
+        user_id: log.userId,
+        action: log.action,
+        table_name: log.entityType,
+        record_id: log.entityId,
+        changes: log.oldValue || log.newValue ? { old: log.oldValue, new: log.newValue } : null,
+        ip_address: log.ipAddress,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+        // deviceId se almacena en changes JSONB
+      }
+
       const { error } = await supabase
         .from('audit_logs')
-        .insert([log])
+        .insert([payload])
 
       if (error) throw error
+      logger.info('supabase', `Audit log created: ${log.action} on ${log.entityType}`)
     } catch (error) {
       logger.error('supabase', 'Error creating audit log', error as any)
     }
@@ -760,7 +773,19 @@ class SupabaseService {
         .limit(limit)
 
       if (error) throw error
-      return (data || []) as AuditLog[]
+      
+      // Mapear campos snake_case a camelCase
+      return (data || []).map((log: any) => ({
+        id: log.id,
+        userId: log.user_id,
+        action: log.action,
+        entityType: log.table_name,
+        entityId: log.record_id,
+        oldValue: log.changes?.old,
+        newValue: log.changes?.new,
+        ipAddress: log.ip_address,
+        timestamp: new Date(log.created_at),
+      }))
     } catch (error) {
       logger.error('supabase', 'Error getting audit logs', error as any)
       return []
