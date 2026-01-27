@@ -58,6 +58,11 @@ export const loginWithPin = functions.https.onCall(async (data, context) => {
       );
     }
 
+    // Generar custom token con el rol en claims
+    const customToken = await admin
+      .auth()
+      .createCustomToken(userFound.id, { role: userFound.role });
+
     return {
       success: true,
       user: {
@@ -66,6 +71,7 @@ export const loginWithPin = functions.https.onCall(async (data, context) => {
         role: userFound.role,
         devices: userFound.devices || [],
       },
+      token: customToken,
     };
   } catch (error: any) {
     console.error("Login error:", error);

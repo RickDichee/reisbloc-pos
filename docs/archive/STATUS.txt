@@ -1,4 +1,4 @@
-```
+Como ```
 ╔════════════════════════════════════════════════════════════════════════╗
 ║                   🚀 TPV SOLUTIONS - ESTADO FINAL                      ║
 ║              Sistema POS Profesional para Restaurantes                  ║

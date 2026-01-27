@@ -1,11 +1,14 @@
 // Hook de autenticación
-import { useState, useEffect } from 'react'
-import { useStore } from '@/store/appStore'
+import { useState } from 'react'
+import { httpsCallable } from 'firebase/functions'
+import { signInWithCustomToken, signOut } from 'firebase/auth'
+import { useAppStore } from '@/store/appStore'
 import deviceService from '@/services/deviceService'
 import firebaseService from '@/services/firebaseService'
 import auditService from '@/services/auditService'
 import { User, Device } from '@/types/index'
-import { APP_CONFIG } from '@/config/constants'
+import { functions, auth } from '@/config/firebase'
+import logger from '@/utils/logger'
 
 export function useAuth() {
   const {
@@ -14,15 +17,15 @@ export function useAuth() {
     isAuthenticated,
     setCurrentUser,
     setCurrentDevice,
+    setAuthenticated,
+    setProducts,
+    setUsers,
     logout: logoutStore,
-  } = useStore()
+  } = useAppStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /**
-   * Login con PIN
-   */
   const login = async (pin: string): Promise<boolean> => {
     try {
       setLoading(true)
@@ -38,63 +41,132 @@ export function useAuth() {
       const deviceInfo = await deviceService.getDeviceInfo()
       const fingerprint = deviceService.storeDeviceFingerprint()
 
-      // TODO: Buscar usuario por PIN (implementar en Cloud Function)
-      // Por ahora, simulamos con busca de username
-      // En producción, usar PIN hasheado desde Cloud Function
+      // Llamar a Cloud Function para verificar PIN (sin loguear el PIN)
+      const loginFunction = httpsCallable(functions, 'loginWithPin')
+      const result = await loginFunction({ pin })
+      const data = result.data as any
 
-      // Buscar dispositivos registrados del usuario
-      let user: User | null = null
-      let device: Device | null = null
-
-      // TODO: Reemplazar con búsqueda por PIN desde backend
-      // Simulación temporal:
-      console.log('PIN ingresado:', pin)
-      console.log('Device info:', deviceInfo)
-
-      // Validar que el dispositivo esté aprobado
-      if (!device?.isApproved) {
-        setError(APP_CONFIG.MESSAGES.DEVICE_NOT_APPROVED)
-        await auditService.logAction(
-          user?.id || 'unknown',
-          'LOGIN_DEVICE_NOT_APPROVED',
-          'AUTH',
-          'login_attempt'
-        )
+      if (!data.success || !data.user || !data.token) {
+        setError('Error en autenticación')
         return false
       }
 
-      // Actualizar último acceso del dispositivo
-      if (device?.id) {
-        await firebaseService.updateDevice(device.id, {
-          lastAccess: new Date(),
-        })
+      const user: User = {
+        id: data.user.id,
+        username: data.user.username,
+        role: data.user.role,
+        pin: '', // No exponer el hash
+        active: data.user.active,
+        createdAt: new Date(),
+        devices: data.user.devices || [],
       }
+
+      logger.info('auth', 'Usuario autenticado', { username: user.username })
+
+      // Autenticar con Firebase Auth usando custom token
+      await signInWithCustomToken(auth, data.token)
+
+      // Obtener o registrar dispositivo
+      const userDevices = await firebaseService.getDevicesByUser(user.id)
+      let device: Device | null =
+        userDevices.find(d => d.macAddress === deviceInfo.macAddress) || null
+
+      if (!device) {
+        const deviceData = {
+          userId: user.id,
+          macAddress: deviceInfo.macAddress || 'unknown',
+          deviceName: deviceInfo.deviceName || 'Unknown Device',
+          network: deviceInfo.network || 'wifi',
+          os: deviceInfo.os || 'Unknown',
+          browser: deviceInfo.browser || 'Unknown',
+          deviceType: deviceInfo.deviceType || 'unknown',
+          fingerprint,
+          registeredAt: new Date(),
+          lastAccess: new Date(),
+          isApproved: false,
+          isRejected: false,
+        }
+
+        const deviceId = await firebaseService.registerDevice(deviceData as any)
+        device = { id: deviceId, ...deviceData } as Device
+        
+        // Auto-aprobar si es admin
+        if (user.role === 'admin') {
+          try {
+            await firebaseService.approveDevice(deviceId)
+            device.isApproved = true
+            device.isRejected = false
+          } catch (e) {
+            console.warn('No se pudo auto-aprobar dispositivo (admin):', e)
+          }
+        }
+      }
+
+      // Si no está aprobado, intentar auto-aprobar si es admin
+      if (!device.isApproved) {
+        if (user.role === 'admin' && device.id) {
+          try {
+            await firebaseService.approveDevice(device.id)
+            device.isApproved = true
+            device.isRejected = false
+          } catch (e) {
+            console.warn('No se pudo auto-aprobar dispositivo existente (admin):', e)
+          }
+        }
+
+        // Si aún no está aprobado, guardar estado y mostrar pantalla de verificación
+        if (!device.isApproved) {
+          setCurrentUser(user)
+          setCurrentDevice(device)
+          setAuthenticated(true)
+
+          await auditService.logAction(
+            user.id,
+            'LOGIN_DEVICE_NOT_APPROVED',
+            'AUTH',
+            'login_attempt',
+            undefined,
+            { deviceId: device.id },
+            device.id
+          )
+
+          return true
+        }
+      }
+
+      // Dispositivo aprobado: actualizar último acceso
+      await firebaseService.updateDevice(device.id, {
+        lastAccess: new Date(),
+      })
 
       // Registrar login exitoso
-      if (user?.id && device?.id) {
-        await auditService.logAction(
-          user.id,
-          'LOGIN_SUCCESS',
-          'AUTH',
-          'login',
-          undefined,
-          { deviceId: device.id },
-          device.id
-        )
+      await auditService.logAction(
+        user.id,
+        'LOGIN_SUCCESS',
+        'AUTH',
+        'login',
+        undefined,
+        { deviceId: device.id },
+        device.id
+      )
 
-        // Guardar en store
-        setCurrentUser(user)
-        setCurrentDevice(device)
+      // Cargar datos iniciales
+      const [products, usersList] = await Promise.all([
+        firebaseService.getAllProducts(),
+        firebaseService.getAllUsers(),
+      ])
 
-        return true
-      }
+      setCurrentUser(user)
+      setCurrentDevice(device)
+      setProducts(products)
+      setUsers(usersList)
+      setAuthenticated(true)
 
-      setError('Usuario no encontrado')
-      return false
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error en login'
+      return true
+    } catch (err: any) {
+      console.error('❌ Login error:', err)
+      const message = err?.message || err?.details?.message || 'Error en login'
       setError(message)
-      console.error('Login error:', err)
       return false
     } finally {
       setLoading(false)
@@ -118,6 +190,17 @@ export function useAuth() {
         )
       }
 
+      try {
+        await signOut(auth)
+      } catch (e) {
+        // ignore signOut errors to avoid blocking logout
+      }
+
+      setAuthenticated(false)
+      setCurrentUser(null)
+      setCurrentDevice(null)
+      setProducts([])
+      setUsers([])
       logoutStore()
     } catch (err) {
       console.error('Logout error:', err)
@@ -132,6 +215,8 @@ export function useAuth() {
     try {
       setLoading(true)
       setError(null)
+
+      await ensureAuthSession()
 
       const deviceInfo = await deviceService.getDeviceInfo()
 
@@ -191,7 +276,12 @@ export function useAuth() {
         d.isApproved
       )
 
-      return !!authorizedDevice
+      if (authorizedDevice) {
+        setCurrentDevice(authorizedDevice)
+        return true
+      }
+
+      return false
     } catch (err) {
       console.error('Device verification error:', err)
       return false

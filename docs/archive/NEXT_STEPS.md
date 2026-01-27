@@ -149,10 +149,39 @@ npm run dev
 | Pagos Clip | [CLIP_INTEGRATION.md](./CLIP_INTEGRATION.md) |
 | Arquitectura | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | GitHub | [GITHUB_SETUP.md](./GITHUB_SETUP.md) |
+| **MercadoPago** | **[MERCADOPAGO_INTEGRATION.md](./MERCADOPAGO_INTEGRATION.md)** |
+| **Changelog v2.0** | **[CHANGELOG_v2.0.md](./CHANGELOG_v2.0.md)** |
+| **UI Improvements** | **[UI_IMPROVEMENTS.md](./UI_IMPROVEMENTS.md)** |
+
+## 🎉 ACTUALIZACIÓN v2.0 COMPLETADA
+
+### ✅ Cambios Implementados (23 enero 2026)
+
+1. **💳 Integración MercadoPago**
+   - Servicio completo de pagos
+   - Panel de pago rediseñado
+   - Soporte efectivo, tarjeta y digital
+
+2. **🎨 UI/UX Modernizada**
+   - ProductGrid con gradientes por categoría
+   - OrderPanel rediseñado
+   - CartSummary mejorado
+   - PaymentPanel con animaciones
+   - Estilos globales actualizados
+
+3. **📝 Documentación Completa**
+   - Guía de integración MercadoPago
+   - Changelog detallado
+   - Guía visual de mejoras
+
+Ver detalles completos en: [SUMMARY_v2.0.md](./SUMMARY_v2.0.md)
 
 ## 🔧 Comandos Útiles
 
 ```bash
+# Configurar MercadoPago
+./setup-mercadopago.sh
+
 # Instalar dependencias
 npm install
 

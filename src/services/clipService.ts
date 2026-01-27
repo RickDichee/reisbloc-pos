@@ -1,5 +1,6 @@
 // Servicio para integración con Clip (Terminal de pagos)
 import { ClipPayment, Sale } from '@types/index';
+import logger from '@/utils/logger'
 
 interface ClipConfig {
   apiKey: string;
@@ -82,6 +83,7 @@ class ClipPaymentService {
       return payment;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('clip', 'Payment processing failed', error as any)
       throw new Error(`Payment processing failed: ${errorMessage}`);
     }
   }
@@ -114,7 +116,7 @@ class ClipPaymentService {
       if (data.status === 'declined') return 'failed';
       return 'pending';
     } catch (error) {
-      console.error('Error checking transaction status:', error);
+      logger.error('clip', 'Error checking transaction status', error as any);
       return 'pending';
     }
   }
@@ -144,7 +146,7 @@ class ClipPaymentService {
 
       return response.ok;
     } catch (error) {
-      console.error('Refund error:', error);
+      logger.error('clip', 'Refund error', error as any);
       return false;
     }
   }
@@ -174,7 +176,7 @@ class ClipPaymentService {
       const data = await response.json();
       return data.balance / 100; // Convertir de centavos
     } catch (error) {
-      console.error('Error getting balance:', error);
+      logger.error('clip', 'Error getting balance', error as any);
       return 0;
     }
   }
@@ -204,7 +206,7 @@ class ClipPaymentService {
       const data = await response.json();
       return data.transactions || [];
     } catch (error) {
-      console.error('Error getting transaction history:', error);
+      logger.error('clip', 'Error getting transaction history', error as any);
       return [];
     }
   }

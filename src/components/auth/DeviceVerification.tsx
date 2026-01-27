@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, Smartphone } from 'lucide-react';
-import { useAppStore } from '../../store/appStore';
-import { Device } from '../../types';
+import React, { useEffect, useState, useCallback } from 'react'
+import { AlertCircle, CheckCircle, Clock, Smartphone } from 'lucide-react'
+import { httpsCallable } from 'firebase/functions'
+import { useAppStore } from '../../store/appStore'
+import { Device } from '../../types'
+import { functions } from '@/config/firebase'
 
 /**
  * DeviceVerification Component
@@ -24,40 +26,71 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
   autoRetry = true,
   retryInterval = 5000,
 }) => {
-  const { currentDevice, currentUser } = useAppStore();
-  const [status, setStatus] = useState<'pending' | 'approved' | 'error'>('pending');
-  const [retryCount, setRetryCount] = useState(0);
-  const [timeElapsed, setTimeElapsed] = useState(0);
+  const { currentDevice, currentUser, setCurrentDevice } = useAppStore()
+  const [status, setStatus] = useState<'pending' | 'approved' | 'error'>('pending')
+  const [retryCount, setRetryCount] = useState(0)
+  const [timeElapsed, setTimeElapsed] = useState(0)
+
+  const validateDevice = useCallback(async () => {
+    if (!currentDevice?.id || !currentUser?.id) {
+      return 'missing'
+    }
+
+    try {
+      const validateFn = httpsCallable(functions, 'validateDevice')
+      const res = await validateFn({ deviceId: currentDevice.id, userId: currentUser.id })
+      const data: any = res.data
+
+      if (data?.success && data.device) {
+        const updated: Device = {
+          ...currentDevice,
+          ...data.device,
+          isApproved: true,
+          isRejected: false,
+        }
+        setCurrentDevice(updated)
+        setStatus('approved')
+        onDeviceApproved?.()
+        return 'approved'
+      }
+
+      setStatus('pending')
+      return 'pending'
+    } catch (err: any) {
+      console.error('validateDevice error:', err)
+      const code = err?.code || ''
+      if (code === 'permission-denied') {
+        setStatus('pending')
+        return 'pending'
+      }
+      setStatus('error')
+      return 'error'
+    }
+  }, [currentDevice, currentUser, onDeviceApproved, setCurrentDevice])
 
   /**
    * Simula la comprobación de aprobación del dispositivo
    * En producción, esto consultaría Firestore periódicamente
    */
   useEffect(() => {
-    if (!autoRetry) return;
+    if (!autoRetry) return
 
-    const checkDeviceApproval = () => {
-      // Si el dispositivo está en Firestore y isApproved = true
-      if (currentDevice?.isApproved) {
-        setStatus('approved');
-        onDeviceApproved?.();
-      } else {
-        setStatus('pending');
-        setRetryCount(prev => prev + 1);
+    const checkNow = async () => {
+      const result = await validateDevice()
+      if (result !== 'approved') {
+        setRetryCount(prev => prev + 1)
       }
-    };
+    }
 
-    // Comprobar inmediatamente
-    checkDeviceApproval();
+    checkNow()
 
-    // Configurar reintentos automáticos
     const interval = setInterval(() => {
-      checkDeviceApproval();
-      setTimeElapsed(prev => prev + retryInterval / 1000);
-    }, retryInterval);
+      checkNow()
+      setTimeElapsed(prev => prev + retryInterval / 1000)
+    }, retryInterval)
 
-    return () => clearInterval(interval);
-  }, [autoRetry, currentDevice, retryInterval, onDeviceApproved]);
+    return () => clearInterval(interval)
+  }, [autoRetry, retryInterval, validateDevice])
 
   if (status === 'approved') {
     return (
@@ -77,7 +110,7 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
           <div className="bg-green-50 rounded-lg p-4 text-left space-y-3">
             <div>
               <p className="text-sm text-gray-600">Dispositivo:</p>
-              <p className="font-semibold text-gray-900">{currentDevice?.name || 'Desconocido'}</p>
+              <p className="font-semibold text-gray-900">{currentDevice?.deviceName || currentDevice?.macAddress || 'Desconocido'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Nombre de Usuario:</p>
@@ -122,7 +155,7 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
           <div>
             <p className="text-sm text-gray-600 font-medium">Nombre del Dispositivo</p>
             <p className="text-gray-900 font-mono text-sm break-all">
-              {currentDevice?.name || 'Detectando...'}
+              {currentDevice?.deviceName || currentDevice?.macAddress || 'Detectando...'}
             </p>
           </div>
           
@@ -181,7 +214,7 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
             onClick={() => {
               setRetryCount(0);
               setTimeElapsed(0);
-              window.location.reload();
+              validateDevice();
             }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors"
           >

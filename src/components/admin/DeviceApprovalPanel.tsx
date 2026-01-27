@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Loader, AlertCircle, Smartphone } from 'lucide-react';
-import { firebaseService } from '../../services/firebaseService';
+import firebaseService from '../../services/firebaseService'; // Corrected import
 import { Device } from '../../types';
 
 /**
@@ -33,12 +33,9 @@ export const DeviceApprovalPanel: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // En Firestore, obtendríamos todos los dispositivos
-      // Esto es un placeholder que se conectará a firebaseService
-      const allDevices = await firebaseService.getAuditLogs({});
+      const allDevices = await firebaseService.getAllDevices(); // Corrected to fetch devices
       console.log('Dispositivos cargados:', allDevices);
-      // Por ahora usando datos de ejemplo
-      setDevices([]);
+      setDevices(allDevices);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(`Error al cargar dispositivos: ${errorMessage}`);
@@ -58,7 +55,7 @@ export const DeviceApprovalPanel: React.FC = () => {
       
       // Actualizar estado local
       setDevices(devices.map(d => 
-        d.id === deviceId ? { ...d, isApproved: true } : d
+        d.id === deviceId ? { ...d, isApproved: true, isRejected: false } : d
       ));
       
       // Mostrar confirmación
@@ -83,10 +80,10 @@ export const DeviceApprovalPanel: React.FC = () => {
     setProcessingId(deviceId);
     try {
       await firebaseService.revokeDevice(deviceId);
-      
+
       // Actualizar estado local
       setDevices(devices.map(d => 
-        d.id === deviceId ? { ...d, isApproved: false } : d
+        d.id === deviceId ? { ...d, isApproved: false, isRejected: true } : d
       ));
       
       console.log('❌ Dispositivo rechazado:', deviceId);
@@ -105,11 +102,11 @@ export const DeviceApprovalPanel: React.FC = () => {
   const filteredDevices = devices.filter(device => {
     switch (filter) {
       case 'pending':
-        return !device.isApproved && !device.isRejected;
+        return !device.isApproved && !device.isRejected; // Now 'isRejected' is a field
       case 'approved':
         return device.isApproved;
       case 'rejected':
-        return device.isRejected;
+        return device.isRejected; // Now 'isRejected' is a field
       default:
         return true;
     }
@@ -227,7 +224,7 @@ export const DeviceApprovalPanel: React.FC = () => {
 
                   {/* Información del Dispositivo */}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{device.name}</p>
+                    <p className="font-semibold text-gray-900">{device.deviceName || device.macAddress || 'Dispositivo'}</p>
                     <p className="text-sm text-gray-500">ID: {device.id?.substring(0, 8)}...</p>
                   </div>
 
@@ -292,14 +289,25 @@ export const DeviceApprovalPanel: React.FC = () => {
                   {/* Acciones */}
                   <div className="border-t pt-4 flex gap-3">
                     {!device.isApproved && (
-                      <button
-                        onClick={() => approveDevice(device.id)}
-                        disabled={processingId === device.id}
-                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        {processingId === device.id && <Loader className="animate-spin" size={16} />}
-                        ✓ Aprobar
-                      </button>
+                      <>
+                        <button
+                          onClick={() => approveDevice(device.id)}
+                          disabled={processingId === device.id}
+                          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          {processingId === device.id && <Loader className="animate-spin" size={16} />}
+                          ✓ Aprobar
+                        </button>
+
+                        <button
+                          onClick={() => rejectDevice(device.id)}
+                          disabled={processingId === device.id}
+                          className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          {processingId === device.id && <Loader className="animate-spin" size={16} />}
+                          ✗ Rechazar
+                        </button>
+                      </>
                     )}
                     
                     {device.isApproved && (

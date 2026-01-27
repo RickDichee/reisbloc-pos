@@ -1,5 +1,6 @@
 // Servicio para gestión de auditoría
 import { AuditLog } from '@types/index';
+import logger from '@/utils/logger'
 
 class AuditService {
   /**
@@ -32,9 +33,9 @@ class AuditService {
       await this.saveAuditLog(auditLog);
 
       // Log en consola para desarrollo
-      console.log('[AUDIT]', auditLog);
+      logger.info('audit', 'Audit log', auditLog)
     } catch (error) {
-      console.error('Error logging audit:', error);
+      logger.error('audit', 'Error logging audit', error as any);
     }
   }
 

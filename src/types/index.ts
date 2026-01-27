@@ -1,11 +1,12 @@
 // Tipos principales del sistema
-export type UserRole = 'admin' | 'capitan' | 'cocina' | 'bar' | 'supervisor';
+export type UserRole = 'admin' | 'capitan' | 'mesero' | 'cocina' | 'bar' | 'supervisor';
 
 export interface User {
   id: string;
   username: string;
   pin: string;
   role: UserRole;
+  email?: string;
   active: boolean;
   createdAt: Date;
   devices?: string[]; // IDs de dispositivos autorizados
@@ -19,9 +20,12 @@ export interface Device {
   network: 'wifi' | 'mobile';
   os: string;
   browser: string;
+  deviceType?: string; // laptop, mobile, tablet, etc.
+  fingerprint?: string; // identificador adicional
   registeredAt: Date;
   lastAccess: Date;
   isApproved: boolean;
+  isRejected?: boolean; // Added to align with DeviceApprovalPanel.tsx logic
 }
 
 export interface Product {
@@ -54,11 +58,20 @@ export interface Order {
   id: string;
   tableNumber: number;
   items: OrderItem[];
-  status: 'open' | 'sent' | 'ready' | 'served' | 'completed';
+  status: 'open' | 'sent' | 'ready' | 'served' | 'completed' | 'cancelled';
+  isCourtesy?: boolean; // Mesa cortesía sin costo
+  authorizedBy?: string; // Admin que autorizó mesa cortesía
   createdAt: Date;
   sentToKitchenAt?: Date;
   createdBy: string;
   notes?: string;
+  closedAt?: Date;
+  closedBy?: string;
+  lastEditedAt?: Date;
+  lastEditedBy?: string;
+  cancelledAt?: Date;
+  cancelledBy?: string;
+  cancelReason?: string;
 }
 
 export interface Sale {
@@ -71,11 +84,21 @@ export interface Sale {
   tax: number;
   total: number;
   paymentMethod: 'cash' | 'digital' | 'clip' | 'mixed';
-  cashAmount?: number;
-  digitalAmount?: number;
+  currency?: 'MXN' | 'USD'; // Default: MXN
+  cashAmount?: number; // MXN
+  usdAmount?: number; // USD cash
+  digitalAmount?: number; // MXN
   clipTransactionId?: string;
-  tip?: number;
+  tip?: number; // Total tip
+  tipCurrency?: 'MXN' | 'USD'; // Tip currency
   tipSource: 'cash' | 'digital' | 'none';
+  paymentBreakdown?: { // Para pagos mixtos por persona
+    personNumber?: number;
+    method: 'cash' | 'digital' | 'clip';
+    currency: 'MXN' | 'USD';
+    amount: number;
+    tip?: number;
+  }[];
   saleBy: string;
   createdAt: Date;
   printedAt?: Date;

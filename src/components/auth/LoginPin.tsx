@@ -128,7 +128,7 @@ export const LoginPin: React.FC = () => {
                 <Lock className="text-white" size={32} />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">TPV Solutions</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Cevicheria Mexa</h1>
             <p className="text-gray-500">Ingresa tu PIN para continuar</p>
           </div>
 
@@ -256,7 +256,7 @@ export const LoginPin: React.FC = () => {
           {/* Footer */}
           <div className="text-center text-xs text-gray-500 border-t pt-4">
             <p>Sistema de Punto de Venta Profesional</p>
-            <p>© 2024 TPV Solutions - Todos los derechos reservados</p>
+            <p>© 2024 Cevicheria Mexa - Restaurante y Marisquería</p>
           </div>
         </div>
 
