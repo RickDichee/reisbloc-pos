@@ -1,9 +1,9 @@
-# Documentación de Seguridad - TPV Solutions
+# Documentación de Seguridad - Reisbloc POS
 
 ## 🔒 Sistema de Registro de Dispositivos
 
 ### Descripción General
-TPV Solutions implementa un sistema robusto de registro y validación de dispositivos para garantizar que solo los empleados autorizados puedan acceder a la aplicación desde dispositivos conocidos.
+Reisbloc POS implementa un sistema robusto de registro y validación de dispositivos para garantizar que solo los empleados autorizados puedan acceder a la aplicación desde dispositivos conocidos.
 
 ### 1. Información del Dispositivo Capturada
 

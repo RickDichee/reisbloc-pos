@@ -1,4 +1,4 @@
-# 📴 Modo Offline / PWA - TPV Solutions
+# 📴 Modo Offline / PWA - Reisbloc POS
 
 ## ✅ Implementación Completa
 
@@ -212,7 +212,7 @@ loadPendingCounts()    // Recargar contadores
 ## 📋 Manifest.json
 
 ### Metadata de App
-- Nombre: TPV Solutions
+- Nombre: Reisbloc POS
 - Descripción: Sistema POS con offline
 - Start URL: /
 - Display: standalone
@@ -349,4 +349,4 @@ Service-Worker-Allowed: /
 
 ## 📝 Créditos
 
-Implementado como parte de TPV Solutions v2.0 - Sistema POS Profesional
+Implementado como parte de Reisbloc POS v2.0 - Sistema POS Profesional

@@ -1,4 +1,4 @@
-# 📚 Documentación TPV Solutions
+# 📚 Documentación Reisbloc POS
 
 Toda la documentación del proyecto organizada por categorías.
 

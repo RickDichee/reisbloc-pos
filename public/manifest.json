@@ -1,6 +1,6 @@
 {
-  "name": "TPV Solutions - Sistema POS Restaurante",
-  "short_name": "TPV Solutions",
+  "name": "Reisbloc POS - Sistema POS Restaurante",
+  "short_name": "Reisbloc POS",
   "description": "Sistema de Punto de Venta profesional para restaurantes con soporte offline",
   "start_url": "/",
   "display": "standalone",

@@ -1,4 +1,4 @@
-# 🍽️ TPV Solutions - Presentación para Cliente
+# 🍽️ Reisbloc POS - Presentación para Cliente
 
 **Sistema de Punto de Venta Profesional para Restaurantes**
 

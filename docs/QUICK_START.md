@@ -1,4 +1,4 @@
-# Guía de Inicio Rápido - TPV Solutions
+# Guía de Inicio Rápido - Reisbloc POS
 
 ## ✅ Lo que se ha completado
 
@@ -81,7 +81,7 @@ Por crear en `firebase/functions/`:
 ### 7. Conectar con GitHub
 ```bash
 # Añadir remote
-git remote add origin https://github.com/tu_usuario/TPV_solutions.git
+git remote add origin https://github.com/tu_usuario/reisbloc-pos.git
 
 # Cambiar rama a main
 git branch -M main

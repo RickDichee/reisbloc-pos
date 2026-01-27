@@ -1,4 +1,4 @@
-# 🚀 Setup GitHub - TPV Solutions
+# 🚀 Setup GitHub - Reisbloc POS
 
 ## Pasos para Conectar con GitHub
 
@@ -22,7 +22,7 @@ cd /home/r1ck/TPV_solutions
 git branch -M main
 
 # Añadir remoto
-git remote add origin https://github.com/tu_usuario/TPV_solutions.git
+git remote add origin https://github.com/tu_usuario/reisbloc-pos.git
 
 # Verificar que el remoto está configurado
 git remote -v
@@ -30,8 +30,8 @@ git remote -v
 
 **Esperado:**
 ```
-origin  https://github.com/tu_usuario/TPV_solutions.git (fetch)
-origin  https://github.com/tu_usuario/TPV_solutions.git (push)
+origin  https://github.com/tu_usuario/reisbloc-pos.git (fetch)
+origin  https://github.com/tu_usuario/reisbloc-pos.git (push)
 ```
 
 ### 3. Hacer Push del Repositorio
@@ -184,10 +184,10 @@ jobs:
 
 ## URLs Importantes
 
-- Repositorio: `https://github.com/tu_usuario/TPV_solutions`
-- Issues: `https://github.com/tu_usuario/TPV_solutions/issues`
-- Pull Requests: `https://github.com/tu_usuario/TPV_solutions/pulls`
-- Projects: `https://github.com/tu_usuario/TPV_solutions/projects`
+- Repositorio: `https://github.com/tu_usuario/reisbloc-pos`
+- Issues: `https://github.com/tu_usuario/reisbloc-pos/issues`
+- Pull Requests: `https://github.com/tu_usuario/reisbloc-pos/pulls`
+- Projects: `https://github.com/tu_usuario/reisbloc-pos/projects`
 
 ## Gestión de Issues
 

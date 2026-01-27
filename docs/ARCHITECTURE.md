@@ -1,8 +1,8 @@
-# Arquitectura del Proyecto - TPV Solutions
+# Arquitectura del Proyecto - Reisbloc POS
 
 ## 🏗️ Visión General
 
-TPV Solutions es una aplicación de Punto de Venta moderna basada en:
+Reisbloc POS es una aplicación de Punto de Venta moderna basada en:
 - **Frontend**: React 18 + TypeScript
 - **Backend**: Firebase (Firestore + Cloud Functions)
 - **Estado Global**: Zustand

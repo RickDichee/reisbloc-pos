@@ -1,4 +1,4 @@
-# 🔍 REVISIÓN PROFUNDA - TPV Solutions
+# 🔍 REVISIÓN PROFUNDA - Reisbloc POS
 
 **Fecha:** 24 de enero 2026  
 **Estado:** Pre-Producción → Testing On-Site  

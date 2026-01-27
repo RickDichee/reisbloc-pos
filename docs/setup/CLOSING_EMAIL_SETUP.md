@@ -2,7 +2,7 @@
 
 ## Descripción General
 
-El sistema TPV Solutions ahora incluye funcionalidad para:
+El sistema Reisbloc POS ahora incluye funcionalidad para:
 1. **Imprimir** comprobantes de cierre de caja (genera un recibo HTML formateado)
 2. **Enviar por correo** reportes de cierre con detalles de ventas, métodos de pago y desempeño de empleados
 

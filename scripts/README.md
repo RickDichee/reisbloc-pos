@@ -1,4 +1,4 @@
-# 🛠️ Scripts - TPV Solutions
+# 🛠️ Scripts - Reisbloc POS
 
 Scripts útiles para desarrollo, configuración y mantenimiento.
 

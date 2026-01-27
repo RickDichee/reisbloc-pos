@@ -1,4 +1,4 @@
-# 📋 Resumen Ejecutivo - TPV Solutions
+# 📋 Resumen Ejecutivo - Reisbloc POS
 
 ## 🎯 Situación Actual
 

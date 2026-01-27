@@ -302,7 +302,7 @@ export default function Closing() {
           ` : ''}
 
           <div class="footer">
-            <p>Documento generado automáticamente por TPV Solutions</p>
+            <p>Documento generado automáticamente por Reisbloc POS</p>
             <p>${new Date().toLocaleTimeString('es-MX')}</p>
           </div>
         </div>

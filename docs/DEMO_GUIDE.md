@@ -114,7 +114,7 @@ cd ~/TPV_solutions
 
 ### Minuto 0-2: Introducción
 ```
-"Este es TPV Solutions, un sistema POS diseñado específicamente 
+"Este es Reisbloc POS, un sistema POS diseñado específicamente 
 para restaurantes. Vamos a ver cómo funciona desde la perspectiva 
 de diferentes roles."
 ```

@@ -1,4 +1,4 @@
-// Cloud Functions para TPV Solutions
+// Cloud Functions para Reisbloc POS
 // Ubicación: firebase/functions/index.ts
 
 import * as functions from "firebase-functions";

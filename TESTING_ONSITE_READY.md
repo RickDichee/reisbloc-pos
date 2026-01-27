@@ -292,7 +292,7 @@ Email → Recibir reporte cierre (opcional)
 
 ## 🎉 CONCLUSIÓN
 
-**TPV Solutions v2.0.0 está 100% listo para testing onsite.**
+**Reisbloc POS v2.0.0 está 100% listo para testing onsite.**
 
 El sistema:
 - ✅ **Compila sin errores** (3014 modules en 10.11s)

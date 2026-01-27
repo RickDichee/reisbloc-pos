@@ -1,4 +1,4 @@
-# 📊 Estado del Proyecto - TPV Solutions
+# 📊 Estado del Proyecto - Reisbloc POS
 
 ## ✨ Resumen General
 

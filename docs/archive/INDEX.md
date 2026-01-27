@@ -1,4 +1,4 @@
-# 📖 Índice de Documentación - TPV Solutions
+# 📖 Índice de Documentación - Reisbloc POS
 
 ## 🚀 Comenzar Aquí
 
@@ -86,7 +86,7 @@ tpv-solutions/
 
 ### 👨‍💼 Gerente/Stakeholder
 Leer en este orden:
-1. `README.md` - ¿Qué es TPV Solutions?
+1. `README.md` - ¿Qué es Reisbloc POS?
 2. `PROJECT_STATUS.md` - Estado actual y línea de tiempo
 3. `ARCHITECTURE.md` - Visión técnica general
 

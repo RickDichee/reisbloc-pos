@@ -1,4 +1,4 @@
-# 🔔 Sistema de Notificaciones Push - TPV Solutions
+# 🔔 Sistema de Notificaciones Push - Reisbloc POS
 
 ## ✅ Implementación Completa
 
@@ -260,7 +260,7 @@ firebase firestore:get users --fields fcmToken
 
 ## 📝 Créditos
 
-Sistema implementado como parte de TPV Solutions v2.0
+Sistema implementado como parte de Reisbloc POS v2.0
 - Firebase Cloud Messaging para push notifications
 - Firestore para notificaciones in-app en tiempo real
 - React hooks personalizados para manejo de estado

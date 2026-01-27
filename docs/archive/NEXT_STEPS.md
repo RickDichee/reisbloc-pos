@@ -1,4 +1,4 @@
-# 📋 Próximos Pasos - TPV Solutions
+# 📋 Próximos Pasos - Reisbloc POS
 
 ## Status Actual
 

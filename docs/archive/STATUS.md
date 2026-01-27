@@ -2,7 +2,7 @@
 
 ## 📊 Resumen General
 
-Tu proyecto TPV Solutions está **100% operacional** con MercadoPago integrado.
+Tu proyecto Reisbloc POS está **100% operacional** con MercadoPago integrado.
 
 ### ✅ Completado
 - ✅ Integración de MercadoPago (servicio + UI)

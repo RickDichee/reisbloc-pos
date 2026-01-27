@@ -1,8 +1,8 @@
-# ✅ Resumen de Actualización - TPV Solutions v2.0
+# ✅ Resumen de Actualización - Reisbloc POS v2.0
 
 ## 🎉 ¡Actualización Completada!
 
-Se ha completado exitosamente la actualización del sistema TPV Solutions a la versión 2.0 con integración de MercadoPago y mejoras significativas de UI/UX.
+Se ha completado exitosamente la actualización del sistema Reisbloc POS a la versión 2.0 con integración de MercadoPago y mejoras significativas de UI/UX.
 
 ---
 

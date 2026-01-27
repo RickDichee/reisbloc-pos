@@ -1,4 +1,4 @@
-# 🔥 Setup Firestore - TPV Solutions
+# 🔥 Setup Firestore - Reisbloc POS
 
 ## Paso 1: Crear Proyecto en Firebase
 

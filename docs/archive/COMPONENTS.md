@@ -1,4 +1,4 @@
-# 🎨 Componentes - TPV Solutions
+# 🎨 Componentes - Reisbloc POS
 
 ## Estructura de Componentes
 

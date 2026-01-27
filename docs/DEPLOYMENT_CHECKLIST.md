@@ -1,4 +1,4 @@
-# ✅ CHECKLIST DE DEPLOYMENT - TPV Solutions
+# ✅ CHECKLIST DE DEPLOYMENT - Reisbloc POS
 
 **Fecha:** 24 de enero 2026  
 **Versión:** 2.0.0  

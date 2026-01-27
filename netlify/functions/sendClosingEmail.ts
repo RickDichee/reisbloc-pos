@@ -166,7 +166,7 @@ export default async (event: any) => {
           ` : ""}
 
           <div class="footer">
-            <p>Este es un correo automático generado por TPV Solutions</p>
+            <p>Este es un correo automático generado por Reisbloc POS</p>
             <p>Por favor, guarda este correo como comprobante de tu cierre de caja</p>
           </div>
         </div>

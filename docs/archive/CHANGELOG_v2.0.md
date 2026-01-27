@@ -1,4 +1,4 @@
-# 🎉 Actualización v2.0 - TPV Solutions
+# 🎉 Actualización v2.0 - Reisbloc POS
 
 ## 📅 Fecha: 23 de enero de 2026
 

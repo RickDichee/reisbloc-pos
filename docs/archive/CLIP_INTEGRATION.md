@@ -1,8 +1,8 @@
-# Integración con Terminal Clip - TPV Solutions
+# Integración con Terminal Clip - Reisbloc POS
 
 ## 📱 Descripción General
 
-TPV Solutions integra la terminal de pagos Clip de Dinero para procesar pagos digitales, con soporte para propinas automáticas y conciliación de transacciones.
+Reisbloc POS integra la terminal de pagos Clip de Dinero para procesar pagos digitales, con soporte para propinas automáticas y conciliación de transacciones.
 
 ## 🔑 Credenciales y Configuración
 
