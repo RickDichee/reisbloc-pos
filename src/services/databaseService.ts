@@ -14,9 +14,9 @@
  */
 
 // Capa de abstracción de base de datos
-// Usa Firebase O Supabase según feature flags (migración gradual)
+// Usa solo Supabase
 import { SUPABASE_FEATURES } from '@/config/supabase'
-import firebaseService from './firebaseService'
+// firebaseService eliminado tras migración a Supabase
 import supabaseService from './supabaseService'
 import logger from '@/utils/logger'
 import {
@@ -32,8 +32,8 @@ import {
 class DatabaseService {
   private get currentService() {
     const useSupabase = SUPABASE_FEATURES.DATABASE_ENABLED
-    logger.info('database', `Using ${useSupabase ? 'Supabase' : 'Firebase'} for database operations`)
-    return useSupabase ? supabaseService : firebaseService
+    logger.info('database', `Using Supabase for database operations`)
+    return supabaseService
   }
 
   // ==================== USERS ====================
@@ -157,8 +157,7 @@ class DatabaseService {
     if (SUPABASE_FEATURES.DATABASE_ENABLED) {
       await supabaseService.createAuditLog(log)
     } else {
-      // @ts-ignore - firebaseService también tiene createAuditLog
-      await firebaseService.createAuditLog?.(log)
+      // Audit log solo en Supabase
     }
   }
 
@@ -173,8 +172,8 @@ class DatabaseService {
     if (SUPABASE_FEATURES.DATABASE_ENABLED) {
       return supabaseService.subscribeToOrders(callback)
     } else {
-      // @ts-ignore - firebaseService también tiene subscriptions
-      return firebaseService.subscribeToOrders?.(callback) || (() => {})
+      // Firebase removido, solo Supabase disponible
+      return () => {}
     }
   }
 
@@ -182,8 +181,8 @@ class DatabaseService {
     if (SUPABASE_FEATURES.DATABASE_ENABLED) {
       return supabaseService.subscribeToProducts(callback)
     } else {
-      // @ts-ignore
-      return firebaseService.subscribeToProducts?.(callback) || (() => {})
+      // Firebase removido, solo Supabase disponible
+      return () => {}
     }
   }
 }

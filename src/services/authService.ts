@@ -8,11 +8,9 @@
  * (at your option) any later version.
  */
 
-// Servicio de autenticación agnóstico (Firebase o Supabase según flags)
+// Servicio de autenticación solo Supabase
 import { supabase, supabaseAdmin } from '@/config/supabase'
-import { httpsCallable } from 'firebase/functions'
-import { signInWithCustomToken, signOut as firebaseSignOut } from 'firebase/auth'
-import { functions, auth } from '@/config/firebase'
+// Firebase eliminado tras migración a Supabase
 import logger from '@/utils/logger'
 import { User } from '@/types/index'
 
@@ -65,8 +63,7 @@ export async function authLogin(pin: string): Promise<LoginResult> {
       logger.info('auth', '✅ Autenticación exitosa con Supabase', { username: user.username })
       return { success: true, user }
     } else {
-      // Modo Firebase: Usar Cloud Function
-      logger.info('auth', '🔍 Autenticando con Firebase Cloud Function...')
+      // Modo Supabase
       
       const loginFunction = httpsCallable(functions, 'loginWithPin')
       const result = await loginFunction({ pin })
@@ -91,7 +88,7 @@ export async function authLogin(pin: string): Promise<LoginResult> {
         await signInWithCustomToken(auth, data.token)
       }
       
-      logger.info('auth', '✅ Autenticación exitosa con Firebase', { username: user.username })
+      // logger.info('auth', '✅ Autenticación exitosa con Supabase', { username: user.username })
       return { success: true, user, token: data.token }
     }
   } catch (error: any) {
@@ -105,7 +102,7 @@ export async function authLogout(): Promise<void> {
     if (useSupabaseAuth) {
       await supabase.auth.signOut()
     } else {
-      await firebaseSignOut(auth)
+      // await supabaseSignOut()
     }
     logger.info('auth', 'Logout exitoso')
   } catch (error: any) {

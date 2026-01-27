@@ -70,7 +70,7 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
 
   /**
    * Simula la comprobación de aprobación del dispositivo
-   * En producción, esto consultaría Firestore periódicamente
+  * En producción, esto consultaría Supabase periódicamente
    */
   useEffect(() => {
     if (!autoRetry) return

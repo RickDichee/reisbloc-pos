@@ -10,8 +10,81 @@ SELECT tablename
 FROM pg_publication_tables 
 WHERE pubname = 'supabase_realtime';
 
--- 3. Si NO aparece 'orders', AGREGAR LA TABLA:
-ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'orders'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+	END IF;
+END $$;
+
+-- 3b. Si NO aparece 'users', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'users'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE users;
+	END IF;
+END $$;
+
+-- 3c. Si NO aparece 'products', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'products'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE products;
+	END IF;
+END $$;
+
+-- 3d. Si NO aparece 'sales', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'sales'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE sales;
+	END IF;
+END $$;
+
+-- 3e. Si NO aparece 'devices', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'devices'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE devices;
+	END IF;
+END $$;
+
+-- 3f. Si NO aparece 'notifications', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'notifications'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+	END IF;
+END $$;
+
+-- 3g. Si NO aparece 'audit_logs', AGREGAR LA TABLA (idempotente):
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_publication_tables
+		WHERE pubname = 'supabase_realtime' AND tablename = 'audit_logs'
+	) THEN
+		ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;
+	END IF;
+END $$;
 
 -- 4. Verificar que quedó agregada
 SELECT tablename 
