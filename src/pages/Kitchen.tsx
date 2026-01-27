@@ -6,11 +6,13 @@ import { Order } from '@/types/index'
 import EditOrderModal from '@/components/admin/EditOrderModal'
 import { useAppStore } from '@/store/appStore'
 import { sendNotificationToUsers } from '@/services/sendNotificationHelper'
+import { useToast } from '@/contexts/ToastContext'
 
 type KitchenFilter = 'all' | 'sent' | 'ready' | 'served'
 
 export default function Kitchen() {
   const { currentUser } = useAppStore()
+  const { order: showOrderToast } = useToast()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +42,8 @@ export default function Kitchen() {
         if (newOrders.length > 0 && prevOrderIds.length > 0) {
           setNewOrdersCount(prev => prev + newOrders.length)
           // Reproducir sonido de notificación
+          // Mostrar toast de nuevas órdenes
+          showOrderToast('🍽️ Nueva Orden', `${newOrders.length} orden(es) lista(s) para cocinar`, 5000)
           audioRef.current?.play().catch(e => logger.warn('kitchen', 'No se pudo reproducir audio', e as any))
         }
         
@@ -67,7 +71,8 @@ export default function Kitchen() {
       logger.info('kitchen', `✅ Order ${orderId} updated to ${newStatus}`)
       
       // Notificar cuando la orden está lista
-      if (newStatus === 'ready' && order && order.tableNumber) {
+      if (showOrderToast('✓ Orden Lista', `Mesa ${order.tableNumber} - ${order.items?.length || 0} platillo(s)`, 5000)
+          newStatus === 'ready' && order && order.tableNumber) {
         try {
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],

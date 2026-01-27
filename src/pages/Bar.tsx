@@ -5,10 +5,12 @@ import supabaseService from '@/services/supabaseService' // Changed from firebas
 import { Order } from '@/types/index'
 import { sendNotificationToUsers } from '@/services/sendNotificationHelper'
 import { useAppStore } from '@/store/appStore'
+import { useToast } from '@/contexts/ToastContext'
 
 type BarFilter = 'all' | 'sent' | 'ready' | 'served'
 
 export default function Bar() {
+  const { order: showOrderToast } = useToast()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +38,8 @@ export default function Bar() {
         
         if (newOrders.length > 0 && prevOrderIds.length > 0) {
           setNewOrdersCount(prev => prev + newOrders.length)
+          // Mostrar toast de nuevas órdenes
+          showOrderToast('🍹 Nueva Orden', `${newOrders.length} orden(es) de bebida(s) para preparar`, 5000)
           audioRef.current?.play().catch(e => logger.warn('bar', 'No se pudo reproducir audio', e as any))
         }
         
@@ -63,7 +67,8 @@ export default function Bar() {
       logger.info('bar', `✅ Order ${orderId} updated to ${newStatus}`)
       
       // Notificar cuando la orden está lista
-      if (newStatus === 'ready' && order && order.tableNumber) {
+      if (showOrderToast('✓ Bebidas Listas', `Mesa ${order.tableNumber} - ${order.items?.length || 0} bebida(s)`, 5000)
+          newStatus === 'ready' && order && order.tableNumber) {
         try {
           await sendNotificationToUsers({
             roles: ['mesero', 'capitan'],

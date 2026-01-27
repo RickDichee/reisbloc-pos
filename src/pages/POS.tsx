@@ -14,6 +14,7 @@ import { Product } from '@/types/index'
 import { sendNotificationToUsers } from '@/services/sendNotificationHelper'
 import { Bell, ShoppingCart } from 'lucide-react'
 import printService from '@/services/printService'
+import NotificationCenter from '@/components/common/NotificationCenter'
 
 export default function POS() {
   const {
@@ -31,13 +32,13 @@ export default function POS() {
     clearDraftForTable,
   } = useAppStore()
   
-  // Notificaciones para mesero (usadas solo en NavBar)
-  // const {
-  //   notifications,
-  //   unreadCount,
-  //   markAsRead,
-  //   markAllAsRead
-  // } = useNotifications(currentUser?.id || null)
+  // Notificaciones para mesero (mostrar en panel)
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead
+  } = useNotifications(currentUser?.id || null)
   
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -404,6 +405,12 @@ export default function POS() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <NotificationCenter
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+              />
               {readyOrdersCount > 0 && (
                 <div className="relative px-5 py-3 bg-red-600 rounded-lg font-bold flex items-center gap-2 animate-pulse shadow-lg">
                   <Bell size={24} className="animate-bounce" />

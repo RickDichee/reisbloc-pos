@@ -20,6 +20,7 @@ import { useAppStore } from '@/store/appStore'
 import DeviceVerification from '@/components/auth/DeviceVerification'
 import NavBar from '@/components/layout/NavBar'
 import OfflineIndicator from '@/components/common/OfflineIndicator'
+import { ToastProvider } from '@/contexts/ToastContext'
 import { useNotifications } from '@/hooks/useNotifications'
 import { Bell } from 'lucide-react'
 
@@ -71,12 +72,12 @@ function App() {
         v7_relativeSplatPath: true
       }}
     >
-      <div className="relative">
-        <NavBar />
-        
+      <ToastProvider>
+        <div className="relative">
+          <NavBar />
 
-        {/* OfflineIndicator - mostrar siempre cuando está offline */}
-        <OfflineIndicator />
+          {/* OfflineIndicator - mostrar siempre cuando está offline */}
+          <OfflineIndicator />
 
         {/* Prompt para solicitar permiso de notificaciones */}
         {showPermissionPrompt && permission === 'default' && (
@@ -138,6 +139,7 @@ function App() {
           </Routes>
         </Suspense>
       </div>
+    </ToastProvider>
     </Router>
   )
 }
