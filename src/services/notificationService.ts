@@ -1,13 +1,9 @@
-// import { messaging } from '../config/firebase'
+import { supabase } from '@/config/supabase'
 import logger from '@/utils/logger'
-// import { getToken, onMessage } from 'firebase/messaging'
-// Firestore imports commented out - using Supabase instead
-// import { doc, updateDoc, collection, addDoc, query, where, onSnapshot, orderBy, limit, Timestamp } from 'firebase/firestore'
-// import { db } from '../config/firebase'
 import type { UserRole } from '../types'
 
-// Toggle to re-enable once Supabase-based notifications exist
-export const NOTIFICATIONS_ENABLED = false
+// Feature flag (activar en Supabase)
+export const NOTIFICATIONS_ENABLED = true
 
 export interface Notification {
   id?: string
@@ -21,25 +17,19 @@ export interface Notification {
   data?: Record<string, any>
 }
 
-// Clave VAPID pública para FCM (debes generarla en Firebase Console)
-// Settings > Cloud Messaging > Web Push certificates
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BExampleVAPIDKey'
-
 /**
- * Solicitar permiso para notificaciones y obtener token FCM
- * @deprecated Firebase messaging disabled, needs migration to Supabase
+ * Solicitar permiso de notificaciones del navegador
  */
-export async function requestNotificationPermission(userId: string): Promise<string | null> {
-  if (!NOTIFICATIONS_ENABLED) return null
-  return null
+export async function requestNotificationPermission(_userId: string): Promise<string | null> {
+  if (!NOTIFICATIONS_ENABLED || typeof Notification === 'undefined') return null
+  const permission = await Notification.requestPermission()
+  return permission === 'granted' ? 'granted' : null
 }
 
 /**
- * Escuchar notificaciones en foreground
- * @deprecated Firebase messaging disabled
+ * Stub de mensajes foreground (no usamos FCM)
  */
-export function listenToForegroundMessages(callback: (payload: any) => void) {
-  if (!NOTIFICATIONS_ENABLED) return () => {}
+export function listenToForegroundMessages(_callback: (payload: any) => void) {
   return () => {}
 }
 
@@ -56,6 +46,23 @@ export async function createNotification(
   data?: Record<string, any>
 ): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
+  try {
+    const payload = {
+      user_id: userId,
+      title,
+      body,
+      type,
+      priority,
+      read: false,
+      data: data || null,
+    }
+
+    const { error } = await supabase.from('notifications').insert([payload])
+    if (error) throw error
+    logger.info('notification', `Notificación creada para ${userId}`)
+  } catch (error) {
+    logger.error('notification', 'Error al crear notificación', error as any)
+  }
 }
 
 /**
@@ -71,6 +78,31 @@ export async function notifyUsersByRole(
   data?: Record<string, any>
 ): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
+  try {
+    const roles = Array.isArray(role) ? role : [role]
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, role')
+      .in('role', roles)
+
+    if (error) throw error
+    const payloads = (users || []).map(u => ({
+      user_id: u.id,
+      title,
+      body,
+      type,
+      priority,
+      read: false,
+      data: data || null,
+    }))
+
+    if (payloads.length === 0) return
+    const { error: insertError } = await supabase.from('notifications').insert(payloads)
+    if (insertError) throw insertError
+    logger.info('notification', `Notificaciones enviadas a roles: ${roles.join(',')}`)
+  } catch (error) {
+    logger.error('notification', 'Error al notificar por rol', error as any)
+  }
 }
 
 /**
@@ -82,13 +114,57 @@ export function subscribeToNotifications(
   callback: (notifications: Notification[]) => void,
   maxNotifications: number = 50
 ) {
-  // Return empty unsubscribe function
   if (!NOTIFICATIONS_ENABLED) {
     callback([])
     return () => {}
   }
-  callback([])
-  return () => {}
+
+  let current: Notification[] = []
+
+  const loadInitial = async () => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(maxNotifications)
+
+    if (error) {
+      const err = error as any
+      logger.error('notification', `Error cargando notificaciones: ${err?.message || 'unknown'}`, err)
+      callback([])
+      return
+    }
+
+    current = (data || []).map(mapFromDb)
+    callback(current)
+  }
+
+  void loadInitial()
+
+  const channel = supabase
+    .channel(`notifications-${userId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+      payload => {
+        if (payload.eventType === 'INSERT' && payload.new) {
+          const next = [mapFromDb(payload.new as any), ...current].slice(0, maxNotifications)
+          current = next
+          callback(next)
+        }
+        if (payload.eventType === 'UPDATE' && payload.new) {
+          const updated = mapFromDb(payload.new as any)
+          current = current.map(n => (n.id === updated.id ? updated : n))
+          callback(current)
+        }
+      }
+    )
+    .subscribe()
+
+  return () => {
+    void supabase.removeChannel(channel)
+  }
 }
 
 /**
@@ -97,6 +173,7 @@ export function subscribeToNotifications(
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
+  await supabase.from('notifications').update({ read: true }).eq('id', notificationId)
 }
 
 /**
@@ -105,4 +182,19 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
  */
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
+  await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
+}
+
+function mapFromDb(row: any): Notification {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    body: row.body,
+    type: row.type,
+    priority: row.priority,
+    read: row.read,
+    createdAt: row.created_at,
+    data: row.data || undefined,
+  }
 }

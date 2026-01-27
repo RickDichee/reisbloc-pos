@@ -1,7 +1,6 @@
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '../config/firebase'
 import logger from '@/utils/logger'
 import type { UserRole } from '../types'
+import { createNotification, notifyUsersByRole, NOTIFICATIONS_ENABLED } from './notificationService'
 
 interface SendNotificationParams {
   userIds?: string[]
@@ -18,12 +17,28 @@ interface SendNotificationParams {
  */
 export async function sendNotificationToUsers(params: SendNotificationParams): Promise<void> {
   try {
-    const sendNotification = httpsCallable(functions, 'sendNotification')
-    await sendNotification(params)
-    logger.info('notification', 'Notificación enviada')
+    if (!NOTIFICATIONS_ENABLED) {
+      logger.warn('notification', 'Notificaciones deshabilitadas (feature flag)')
+      return
+    }
+
+    const type = params.type || 'info'
+    const priority = params.priority || 'normal'
+
+    if (params.userIds?.length) {
+      await Promise.all(
+        params.userIds.map(userId =>
+          createNotification(userId, params.title, params.body, type, priority, params.data)
+        )
+      )
+    }
+
+    if (params.roles?.length) {
+      await notifyUsersByRole(params.roles, params.title, params.body, type, priority, params.data)
+    }
+
+    logger.info('notification', 'Notificación enviada via Supabase')
   } catch (error) {
-    // Silently fail during Supabase migration - notifications will be re-enabled later
-    logger.warn('notification', '⚠️ Notificaciones deshabilitadas temporalmente (migrando a Supabase)')
-    return
+    logger.error('notification', 'Error enviando notificación', error as any)
   }
 }

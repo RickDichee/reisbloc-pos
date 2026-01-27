@@ -102,6 +102,18 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  title VARCHAR(150) NOT NULL,
+  body TEXT NOT NULL,
+  type VARCHAR(20) DEFAULT 'info',
+  priority VARCHAR(10) DEFAULT 'normal',
+  read BOOLEAN DEFAULT false,
+  data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS closings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   date DATE NOT NULL,
@@ -134,6 +146,8 @@ CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sales_waiter ON sales(waiter_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_closings_date ON closings(date DESC);
 CREATE INDEX IF NOT EXISTS idx_closings_closed_by ON closings(closed_by);
 
@@ -172,6 +186,7 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE closings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 5. CREAR RLS POLICIES
@@ -346,6 +361,37 @@ CREATE POLICY "Anon can create audit logs"
   ON audit_logs FOR INSERT
   TO anon
   WITH CHECK (true);
+
+-- Policies para notifications
+DROP POLICY IF EXISTS "Notifications are viewable by authenticated users" ON notifications;
+CREATE POLICY "Notifications are viewable by authenticated users"
+  ON notifications FOR SELECT
+  TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "Notifications are viewable by anon users" ON notifications;
+CREATE POLICY "Notifications are viewable by anon users"
+  ON notifications FOR SELECT
+  TO anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Users can create notifications" ON notifications;
+CREATE POLICY "Users can create notifications"
+  ON notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anon can create notifications" ON notifications;
+CREATE POLICY "Anon can create notifications"
+  ON notifications FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can update notifications" ON notifications;
+CREATE POLICY "Users can update notifications"
+  ON notifications FOR UPDATE
+  TO authenticated, anon
+  USING (true);
 
 -- Policies para closings
 DROP POLICY IF EXISTS "Closings are viewable by authenticated users" ON closings;
