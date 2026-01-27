@@ -24,16 +24,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
-  server: {
-    host: '0.0.0.0', // Permite conexiones desde red local
-    port: 5173,
-    open: true
-  },
   build: {
     outDir: 'dist',
     sourcemap: true,
     target: 'esnext',
     rollupOptions: {
+      external: ['firebase-functions', 'firebase-admin'],
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
