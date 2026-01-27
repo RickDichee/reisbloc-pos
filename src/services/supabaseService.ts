@@ -767,6 +767,81 @@ class SupabaseService {
     }
   }
 
+  // ==================== CLOSINGS ====================
+
+  async saveClosing(closing: Omit<DailyClose, 'id'>): Promise<string> {
+    try {
+      const payload = {
+        date: closing.date instanceof Date ? closing.date.toISOString().split('T')[0] : closing.date,
+        closed_by: closing.closedBy,
+        total_sales: parseFloat(String(closing.totalSales)) || 0,
+        total_cash: parseFloat(String(closing.totalCash)) || 0,
+        total_card: parseFloat(String(closing.totalCard)) || 0,
+        total_digital: parseFloat(String(closing.totalDigital)) || 0,
+        total_tips: parseFloat(String(closing.totalTips)) || 0,
+        orders_count: parseInt(String(closing.ordersCount)) || 0,
+        sales_count: parseInt(String(closing.salesCount)) || 0,
+        employee_metrics: closing.employeeMetrics || [],
+        payment_methods: closing.paymentMethods || {},
+        notes: closing.notes || '',
+        status: closing.status || 'closed',
+        closed_at: new Date().toISOString(),
+      }
+
+      logger.info('supabase', '💾 Saving closing:', payload)
+
+      const { error } = await supabase
+        .from('closings')
+        .insert([payload], { returning: 'minimal' })
+
+      if (error) {
+        logger.error('supabase', '❌ Error saving closing:', error)
+        throw new Error(`Supabase error: ${error.message}`)
+      }
+
+      logger.info('supabase', '✅ Closing saved successfully')
+      return payload.closed_by || ''
+    } catch (error: any) {
+      logger.error('supabase', '❌ Error saving closing:', error?.message || String(error))
+      throw error
+    }
+  }
+
+  async getClosings(startDate: Date, endDate: Date): Promise<DailyClose[]> {
+    try {
+      const { data, error } = await supabase
+        .from('closings')
+        .select('*')
+        .gte('date', startDate.toISOString().split('T')[0])
+        .lte('date', endDate.toISOString().split('T')[0])
+        .order('date', { ascending: false })
+
+      if (error) throw error
+
+      // Map snake_case to camelCase
+      return (data || []).map((closing: any) => ({
+        id: closing.id,
+        date: closing.date,
+        closedBy: closing.closed_by,
+        totalSales: parseFloat(closing.total_sales),
+        totalCash: parseFloat(closing.total_cash),
+        totalCard: parseFloat(closing.total_card),
+        totalDigital: parseFloat(closing.total_digital),
+        totalTips: parseFloat(closing.total_tips),
+        ordersCount: closing.orders_count,
+        salesCount: closing.sales_count,
+        employeeMetrics: closing.employee_metrics,
+        paymentMethods: closing.payment_methods,
+        notes: closing.notes,
+        status: closing.status,
+        closedAt: new Date(closing.closed_at),
+      })) as DailyClose[]
+    } catch (error) {
+      logger.error('supabase', 'Error getting closings', error as any)
+      return []
+    }
+  }
+
   // ==================== REAL-TIME SUBSCRIPTIONS ====================
 
   subscribeToOrders(callback: (orders: Order[]) => void) {

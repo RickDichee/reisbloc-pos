@@ -102,6 +102,25 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS closings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  closed_by UUID REFERENCES users(id),
+  total_sales DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_cash DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_card DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_digital DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_tips DECIMAL(10,2) NOT NULL DEFAULT 0,
+  orders_count INTEGER NOT NULL DEFAULT 0,
+  sales_count INTEGER NOT NULL DEFAULT 0,
+  employee_metrics JSONB,
+  payment_methods JSONB,
+  notes TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'open',
+  closed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ============================================
 -- 2. CREAR ÍNDICES
 -- ============================================
@@ -115,6 +134,8 @@ CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sales_waiter ON sales(waiter_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_closings_date ON closings(date DESC);
+CREATE INDEX IF NOT EXISTS idx_closings_closed_by ON closings(closed_by);
 
 -- ============================================
 -- 3. CREAR TRIGGERS PARA updated_at
@@ -150,6 +171,7 @@ ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE closings ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 5. CREAR RLS POLICIES
@@ -305,6 +327,19 @@ DROP POLICY IF EXISTS "Users can create audit logs" ON audit_logs;
 CREATE POLICY "Users can create audit logs"
   ON audit_logs FOR INSERT
   TO authenticated
+  WITH CHECK (true);
+
+-- Policies para closings
+DROP POLICY IF EXISTS "Closings are viewable by authenticated users" ON closings;
+CREATE POLICY "Closings are viewable by authenticated users"
+  ON closings FOR SELECT
+  TO authenticated, anon
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can create closings" ON closings;
+CREATE POLICY "Admins can create closings"
+  ON closings FOR INSERT
+  TO authenticated, anon
   WITH CHECK (true);
 
 -- ============================================

@@ -132,16 +132,27 @@ export default function Closing() {
     try {
       const closingRecord = {
         date: new Date(),
-        closedBy: currentUser?.id,
-        closedByName: currentUser?.username,
-        metrics: closingData,
+        closedBy: currentUser?.id || '',
+        totalSales: closingData.totalSales,
+        totalCash: closingData.cash,
+        totalCard: closingData.card,
+        totalDigital: closingData.digital,
+        totalTips: closingData.totalTips,
+        ordersCount: closingData.ordersCount,
+        salesCount: closingData.salesCount,
         employeeMetrics,
+        paymentMethods: {
+          cash: closingData.cash,
+          card: closingData.card,
+          digital: closingData.digital,
+        },
         notes,
         status: 'closed',
       }
 
-      // Guardado deshabilitado hasta migrar a Supabase (no existe tabla closings)
-      alert('✅ Cierre de caja calculado. Guardado deshabilitado temporalmente (migración a Supabase)')
+      await supabaseService.saveClosing(closingRecord)
+      
+      alert('✅ Cierre de caja guardado exitosamente')
       setConfirmed(false)
       setNotes('')
       loadClosingData()
