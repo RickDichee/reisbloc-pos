@@ -42,10 +42,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 supabase.realtime.setAuth(getStoredToken()?.accessToken || null)
 
 // Actualizar token cuando cambie
-export function setAuthToken(token: string | null) {
-  if (token) {
+export async function setAuthToken(token: string | null) {
+  try {
+    if (!token) {
+      supabase.realtime.setAuth(null)
+      await supabase.auth.signOut()
+      return
+    }
+
+    // Aplicar token en Realtime y Functions
     supabase.realtime.setAuth(token)
-    // También se puede usar para requests HTTP si es necesario
+    supabase.functions.setAuth?.(token)
+
+    // Establecer sesión para que todas las llamadas HTTP usen el JWT
+    await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: token
+    })
+  } catch (error) {
+    console.error('⚠️ Error setting Supabase auth token', error)
   }
 }
 

@@ -160,7 +160,7 @@ export function useAuth() {
           deviceId: device.id
         })
         // Actualizar cliente Supabase con el token
-        setSupabaseAuthToken(tokenResponse.accessToken)
+        await setSupabaseAuthToken(tokenResponse.accessToken)
         logger.info('auth', 'JWT generado exitosamente', { userId: user.id })
       } catch (tokenError) {
         logger.warn('auth', 'Error generando JWT (continuando con sesión local)', tokenError as any)
