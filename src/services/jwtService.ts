@@ -14,8 +14,34 @@ interface TokenResponse {
 }
 
 /**
+ * Generar JWT personalizado directamente en el cliente (para desarrollo)
+ * En producción, esto debería venir de una Cloud Function segura
+ */
+function generateJWTToken(userId: string, role: string, deviceId: string): string {
+  // Header
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+
+  // Payload con expiración en 24 horas
+  const now = Math.floor(Date.now() / 1000)
+  const payload = btoa(
+    JSON.stringify({
+      sub: userId,
+      role: role,
+      deviceId: deviceId,
+      iat: now,
+      exp: now + 24 * 60 * 60, // 24 horas
+      iss: 'reisbloc-pos'
+    })
+  )
+
+  // Signature (simplificada para desarrollo - en producción usar HMAC-SHA256)
+  const signature = btoa('dev-signature-' + userId + '-' + deviceId)
+
+  return `${header}.${payload}.${signature}`
+}
+
+/**
  * Generar JWT personalizado después de validar PIN
- * Esto asegura que Supabase RLS solo permita acceso a usuarios válidos
  */
 export async function generateAccessToken(payload: LoginPayload): Promise<TokenResponse> {
   try {
@@ -31,35 +57,24 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
       throw new Error('PIN inválido')
     }
 
-    // 2. Llamar a Cloud Function para generar JWT
-    const { data, error } = await supabase.functions.invoke('generate-access-token', {
-      body: {
-        userId: user.id,
-        role: user.role,
-        deviceId: payload.deviceId
-      }
-    })
+    // 2. Generar JWT en el cliente (para desarrollo)
+    const token = generateJWTToken(user.id, user.role, payload.deviceId)
 
-    if (error) {
-      logger.error('auth', 'Error generating token', error)
-      throw new Error('No se pudo generar token de acceso')
-    }
-
-    // 3. Guardar token en localStorage (sessionStorage es más seguro pero menos práctico)
+    // 3. Guardar token en localStorage
     const tokenData = {
-      accessToken: data.accessToken,
+      accessToken: token,
       userId: user.id,
       userRole: user.role,
       username: user.name,
-      expiresAt: Date.now() + (data.expiresIn || 3600) * 1000
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000
     }
 
-    // Store token (usar sessionStorage en producción)
+    // Store token
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('reisbloc_auth_token', JSON.stringify(tokenData))
     }
 
-    logger.info('auth', 'Token generado exitosamente', { userId: user.id, role: user.role })
+    logger.info('auth', 'JWT generado exitosamente', { userId: user.id, role: user.role })
 
     return tokenData as TokenResponse
   } catch (error) {
@@ -109,3 +124,4 @@ export function isTokenValid(): boolean {
   const token = getStoredToken()
   return !!(token && token.accessToken && token.expiresAt > Date.now())
 }
+
