@@ -4,6 +4,8 @@ import { useAppStore } from '@/store/appStore'
 import deviceService from '@/services/deviceService'
 import supabaseService from '@/services/supabaseService'
 import auditService from '@/services/auditService'
+import { generateAccessToken, setAuthToken } from '@/services/jwtService'
+import { setAuthToken as setSupabaseAuthToken } from '@/config/supabase'
 import { User, Device } from '@/types/index'
 import logger from '@/utils/logger'
 
@@ -150,6 +152,20 @@ export function useAuth() {
       await supabaseService.updateDevice(device.id, {
         lastAccess: new Date(),
       })
+
+      // ✅ GENERAR JWT PERSONALIZADO
+      try {
+        const tokenResponse = await generateAccessToken({
+          pin,
+          deviceId: device.id
+        })
+        // Actualizar cliente Supabase con el token
+        setSupabaseAuthToken(tokenResponse.accessToken)
+        logger.info('auth', 'JWT generado exitosamente', { userId: user.id })
+      } catch (tokenError) {
+        logger.warn('auth', 'Error generando JWT (continuando con sesión local)', tokenError as any)
+        // Continuar aunque falle JWT - fallback a sesión local
+      }
 
       // Registrar login exitoso
       await auditService.logAction(

@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { getStoredToken } from '@/services/jwtService'
 
 // Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
@@ -35,6 +36,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Interceptor para agregar JWT personalizado a cada request
+// Esto permite que RLS valide el token
+supabase.realtime.setAuth(getStoredToken()?.accessToken || null)
+
+// Actualizar token cuando cambie
+export function setAuthToken(token: string | null) {
+  if (token) {
+    supabase.realtime.setAuth(token)
+    // También se puede usar para requests HTTP si es necesario
+  }
+}
 
 // Feature flags para migración gradual
 export const SUPABASE_FEATURES = {
