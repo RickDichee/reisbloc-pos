@@ -20,6 +20,7 @@ This guide walks through deploying Reisbloc POS to production with strict securi
 
 ### 1.2 Generate JWT Secret
 ```bash
+
 # Generate a strong 32+ character secret
 openssl rand -base64 32
 

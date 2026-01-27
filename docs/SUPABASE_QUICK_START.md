@@ -170,7 +170,7 @@ npm run dev
 ```
 
 ### 6.3 Testing Checklist
-- [ ] Login funciona
+- [x] Login funciona
 - [ ] Ver productos
 - [ ] Crear nueva orden
 - [ ] Actualizar orden

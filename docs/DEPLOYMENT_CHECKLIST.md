@@ -55,7 +55,96 @@
 - JWT incluye claims (user_id, role, etc.)
 - Supabase RLS valida JWT claims
 - ✅ Ventajas: Mantiene UX actual, seguridad correcta
-- ❌ Desventajas: Requiere serverless function para generar tokens
+- ❌ DLOG🔎 [app] Auth state {isAuthenticated: true, device: {…}, needsApproval: false}
+logger.ts:22 LOG🔎 [app] Auth state {isAuthenticated: true, device: {…}, needsApproval: false}
+installHook.js:1 LOG🔎 [app] Auth state {isAuthenticated: true, device: {…}, needsApproval: false}
+logger.ts:22 LOG🔎 [payment] Cash payment {amount: 3360, tip: 0}
+logger.ts:22 LOG🔎 [payment] Starting payment process for 19 orders
+logger.ts:22 LOG🔎 [payment] Creating sale: subtotal=3360, total=3360, method=cash
+logger.ts:22 LOG🔎 [supabase] 💰 Creating sale with payload: {order_id: 'fec184fd-63d4-4e79-a3c6-423da1e34d2e', waiter_id: '54b145c1-6fb1-446b-99c8-01c28bd952fb', table_number: 0, items: Array(38), subtotal: 3360, …}
+logger.ts:22 LOG🔎 [supabase]    - order_id: fec184fd-63d4-4e79-a3c6-423da1e34d2e
+logger.ts:22 LOG🔎 [supabase]    - waiter_id: 54b145c1-6fb1-446b-99c8-01c28bd952fb
+logger.ts:22 LOG🔎 [supabase]    - table_number: 0 number
+logger.ts:22 LOG🔎 [supabase]    - subtotal: 3360 number
+logger.ts:22 LOG🔎 [supabase]    - total: 3360 number
+logger.ts:22 LOG🔎 [supabase]    - payment_method: cash
+logger.ts:22 LOG🔎 [supabase]    - items count: 38
+installHook.js:1 ERROR❌ [supabase] ❌ Supabase insert error: {code: '42501', message: 'new row violates row-level security policy for table "sales"', details: null, hint: null, statusCode: undefined}
+overrideMethod @ installHook.js:1
+error @ logger.ts:30
+createSale @ supabaseService.ts:701
+await in createSale
+handlePaymentComplete @ TableMonitor.tsx:394
+(anonymous) @ PaymentPanel.tsx:73
+setTimeout
+handlePayment @ PaymentPanel.tsx:72
+await in handlePayment
+callCallback2 @ chunk-NUMECXU6.js?v=5eeeaece:3674
+invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=5eeeaece:3699
+invokeGuardedCallback @ chunk-NUMECXU6.js?v=5eeeaece:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=5eeeaece:3736
+executeDispatch @ chunk-NUMECXU6.js?v=5eeeaece:7014
+processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=5eeeaece:7034
+processDispatchQueue @ chunk-NUMECXU6.js?v=5eeeaece:7043
+dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=5eeeaece:7051
+(anonymous) @ chunk-NUMECXU6.js?v=5eeeaece:7174
+batchedUpdates$1 @ chunk-NUMECXU6.js?v=5eeeaece:18913
+batchedUpdates @ chunk-NUMECXU6.js?v=5eeeaece:3579
+dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=5eeeaece:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=5eeeaece:5478
+dispatchEvent @ chunk-NUMECXU6.js?v=5eeeaece:5472
+dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=5eeeaece:5449Understand this error
+installHook.js:1 ERROR❌ [supabase] ❌ Error creating sale: Supabase error: new row violates row-level security policy for table "sales"  
+overrideMethod @ installHook.js:1
+error @ logger.ts:30
+createSale @ supabaseService.ts:714
+await in createSale
+handlePaymentComplete @ TableMonitor.tsx:394
+(anonymous) @ PaymentPanel.tsx:73
+setTimeout
+handlePayment @ PaymentPanel.tsx:72
+await in handlePayment
+callCallback2 @ chunk-NUMECXU6.js?v=5eeeaece:3674
+invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=5eeeaece:3699
+invokeGuardedCallback @ chunk-NUMECXU6.js?v=5eeeaece:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=5eeeaece:3736
+executeDispatch @ chunk-NUMECXU6.js?v=5eeeaece:7014
+processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=5eeeaece:7034
+processDispatchQueue @ chunk-NUMECXU6.js?v=5eeeaece:7043
+dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=5eeeaece:7051
+(anonymous) @ chunk-NUMECXU6.js?v=5eeeaece:7174
+batchedUpdates$1 @ chunk-NUMECXU6.js?v=5eeeaece:18913
+batchedUpdates @ chunk-NUMECXU6.js?v=5eeeaece:3579
+dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=5eeeaece:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=5eeeaece:5478
+dispatchEvent @ chunk-NUMECXU6.js?v=5eeeaece:5472
+dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=5eeeaece:5449Understand this error
+installHook.js:1 ERROR❌ [payment] Payment failed: Supabase error: new row violates row-level security policy for table "sales"   Error: Supabase error: new row violates row-level security policy for table "sales"  
+    at SupabaseService.createSale (supabaseService.ts:708:15)
+    at async handlePaymentComplete (TableMonitor.tsx:394:7)
+overrideMethod @ installHook.js:1
+error @ logger.ts:30
+handlePaymentComplete @ TableMonitor.tsx:423
+await in handlePaymentComplete
+(anonymous) @ PaymentPanel.tsx:73
+setTimeout
+handlePayment @ PaymentPanel.tsx:72
+await in handlePayment
+callCallback2 @ chunk-NUMECXU6.js?v=5eeeaece:3674
+invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=5eeeaece:3699
+invokeGuardedCallback @ chunk-NUMECXU6.js?v=5eeeaece:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=5eeeaece:3736
+executeDispatch @ chunk-NUMECXU6.js?v=5eeeaece:7014
+processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=5eeeaece:7034
+processDispatchQueue @ chunk-NUMECXU6.js?v=5eeeaece:7043
+dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=5eeeaece:7051
+(anonymous) @ chunk-NUMECXU6.js?v=5eeeaece:7174
+batchedUpdates$1 @ chunk-NUMECXU6.js?v=5eeeaece:18913
+batchedUpdates @ chunk-NUMECXU6.js?v=5eeeaece:3579
+dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=5eeeaece:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=5eeeaece:5478
+dispatchEvent @ chunk-NUMECXU6.js?v=5eeeaece:5472
+dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=5eeeaece:5449Understand this error
 
 **Opción 3: RLS con `anon` Restringido**
 - Mantener `anon` role pero con policies específicas

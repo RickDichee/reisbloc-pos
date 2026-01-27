@@ -8,6 +8,9 @@ dist/
 .env.local
 .env.*.local
 
+# Producción
+.env.production
+
 # Firebase
 .firebase/
 firebase-debug.log
