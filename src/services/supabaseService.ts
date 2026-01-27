@@ -378,6 +378,10 @@ class SupabaseService {
         payload.available = product.active
         delete payload.active
       }
+      // Remove inventory fields not present in Supabase schema
+      if ('currentStock' in payload) delete payload.currentStock
+      if ('hasInventory' in payload) delete payload.hasInventory
+      if ('minimumStock' in payload) delete payload.minimumStock
       
       const { data, error } = await supabase
         .from('products')
@@ -404,6 +408,7 @@ class SupabaseService {
       // Remove inventory fields not present in Supabase schema
       if ('currentStock' in payload) delete payload.currentStock
       if ('hasInventory' in payload) delete payload.hasInventory
+      if ('minimumStock' in payload) delete payload.minimumStock
       
       const { error } = await supabase
         .from('products')
@@ -534,7 +539,7 @@ class SupabaseService {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .in('status', ['pending', 'preparing', 'ready', 'served'])
+        .in('status', ['sent', 'preparing', 'ready', 'served'])
         .order('created_at', { ascending: true })
 
       if (error) throw error
