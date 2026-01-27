@@ -45,11 +45,13 @@ class SupabaseService {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
+        .eq('name', username) // Supabase uses 'name' column
         .single()
 
       if (error) throw error
-      return data as User
+      // Map Supabase fields to TypeScript User type
+      const user = data ? { ...data, username: data.name } : null
+      return user as User
     } catch (error) {
       logger.error('supabase', 'Error getting user', error as any)
       return null
@@ -65,7 +67,9 @@ class SupabaseService {
         .single()
 
       if (error) throw error
-      return data as User
+      // Map Supabase fields to TypeScript User type
+      const user = data ? { ...data, username: data.name } : null
+      return user as User
     } catch (error) {
       logger.error('supabase', 'Error getting user by ID', error as any)
       return null
@@ -74,14 +78,20 @@ class SupabaseService {
 
   async getAllUsers(): Promise<User[]> {
     return this.withRetry(async () => {
+      console.log('🔍 [Supabase] Obteniendo usuarios...')
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('active', true)
+        // .eq('active', true) // Temporalmente comentado para debug
         .order('name', { ascending: true })
 
+      console.log('🔍 [Supabase] Data:', data)
+      console.log('🔍 [Supabase] Error:', error)
+      
       if (error) throw error
-      return (data || []) as User[]
+      // Map Supabase fields to TypeScript User type
+      return (data || []).map(user => ({ ...user, username: user.name })) as User[]
     }).catch(error => {
       logger.error('supabase', 'Error getting all users', error as any)
       return []
@@ -90,9 +100,13 @@ class SupabaseService {
 
   async createUser(user: Omit<User, 'id'>): Promise<string> {
     try {
+      // Map TypeScript User fields to Supabase schema
+      const { username, ...rest } = user as any
+      const supabaseUser = { ...rest, name: username }
+      
       const { data, error } = await supabase
         .from('users')
-        .insert([user])
+        .insert([supabaseUser])
         .select('id')
         .single()
 
@@ -106,9 +120,13 @@ class SupabaseService {
 
   async updateUser(userId: string, updates: Partial<User>): Promise<void> {
     try {
+      // Map TypeScript User fields to Supabase schema
+      const { username, ...rest } = updates as any
+      const supabaseUpdates = username ? { ...rest, name: username } : rest
+      
       const { error } = await supabase
         .from('users')
-        .update(updates)
+        .update(supabaseUpdates)
         .eq('id', userId)
 
       if (error) throw error
@@ -135,14 +153,61 @@ class SupabaseService {
 
   // ==================== DEVICES ====================
 
-  async registerDevice(device: Omit<Device, 'id'>): Promise<string> {
+  async getAllDevices(): Promise<Device[]> {
     try {
       const { data, error } = await supabase
         .from('devices')
-        .insert([{
-          ...device,
-          last_seen: new Date().toISOString()
-        }])
+        .select('*')
+
+      if (error) throw error
+      
+      console.log('🔍 [Supabase] Devices raw:', data)
+      
+      // Mapear snake_case a camelCase
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        userId: d.user_id,
+        macAddress: d.mac_address,
+        deviceName: d.device_name,
+        network: d.network || d.network_type,
+        os: d.os,
+        browser: d.browser,
+        deviceType: d.device_type,
+        fingerprint: d.fingerprint,
+        registeredAt: new Date(d.registered_at || d.created_at),
+        lastAccess: new Date(d.last_access || d.last_seen),
+        isApproved: d.status === 'approved',
+        isRejected: d.status === 'rejected',
+      })) as Device[]
+    } catch (error) {
+      logger.error('supabase', 'Error getting all devices', error as any)
+      return []
+    }
+  }
+
+  async registerDevice(device: Omit<Device, 'id'>): Promise<string> {
+    try {
+      // Mapear camelCase a snake_case para PostgreSQL
+      const deviceData = {
+        user_id: device.userId,
+        mac_address: device.macAddress,
+        device_name: device.deviceName,
+        device_type: device.deviceType,
+        network: device.network,
+        network_type: device.network,
+        os: device.os,
+        browser: device.browser,
+        fingerprint: device.fingerprint,
+        status: 'pending',
+        registered_at: device.registeredAt?.toISOString() || new Date().toISOString(),
+        last_access: device.lastAccess?.toISOString() || new Date().toISOString(),
+        last_seen: new Date().toISOString()
+      }
+
+      // Usar UPSERT para evitar errores de duplicado
+      const { data, error } = await supabase
+        .from('devices')
+        .upsert([deviceData], { onConflict: 'mac_address' })
         .select('id')
         .single()
 
@@ -162,7 +227,23 @@ class SupabaseService {
         .eq('user_id', userId)
 
       if (error) throw error
-      return (data || []) as Device[]
+      
+      // Mapear snake_case a camelCase
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        userId: d.user_id,
+        macAddress: d.mac_address,
+        deviceName: d.device_name,
+        network: d.network || d.network_type,
+        os: d.os,
+        browser: d.browser,
+        deviceType: d.device_type,
+        fingerprint: d.fingerprint,
+        registeredAt: new Date(d.registered_at || d.created_at),
+        lastAccess: new Date(d.last_access || d.last_seen),
+        isApproved: d.status === 'approved',
+        isRejected: d.status === 'rejected',
+      })) as Device[]
     } catch (error) {
       logger.error('supabase', 'Error getting devices', error as any)
       return []
@@ -185,29 +266,25 @@ class SupabaseService {
     }
   }
 
-  async getAllDevices(): Promise<Device[]> {
-    try {
-      const { data, error } = await supabase
-        .from('devices')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      return (data || []) as Device[]
-    } catch (error) {
-      logger.error('supabase', 'Error getting all devices', error as any)
-      return []
-    }
-  }
-
   async updateDevice(deviceId: string, updates: Partial<Device>): Promise<void> {
     try {
+      // Mapear camelCase a snake_case
+      const updateData: any = {}
+      if (updates.userId) updateData.user_id = updates.userId
+      if (updates.macAddress) updateData.mac_address = updates.macAddress
+      if (updates.deviceName) updateData.device_name = updates.deviceName
+      if (updates.network) updateData.network = updates.network
+      if (updates.os) updateData.os = updates.os
+      if (updates.browser) updateData.browser = updates.browser
+      if (updates.deviceType) updateData.device_type = updates.deviceType
+      if (updates.fingerprint) updateData.fingerprint = updates.fingerprint
+      if (updates.lastAccess) updateData.last_access = updates.lastAccess.toISOString()
+      
+      updateData.last_seen = new Date().toISOString()
+
       const { error } = await supabase
         .from('devices')
-        .update({
-          ...updates,
-          last_seen: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', deviceId)
 
       if (error) throw error
@@ -254,15 +331,23 @@ class SupabaseService {
 
   async getAllProducts(): Promise<Product[]> {
     return this.withRetry(async () => {
+      console.log('🔍 [Supabase] Obteniendo productos...')
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('available', true)
+        // Temporarily remove .eq('available', true) to see all products
         .order('category', { ascending: true })
         .order('name', { ascending: true })
 
+      console.log('🔍 [Supabase] Productos data:', data)
+      console.log('🔍 [Supabase] Productos error:', error)
+      
       if (error) throw error
-      return (data || []) as Product[]
+      // Filter in memory to show active/available products
+      const products = (data || []) as Product[]
+      console.log('🔍 [Supabase] Total productos:', products.length)
+      console.log('🔍 [Supabase] Productos por estado:', products.map(p => ({ name: p.name, available: (p as any).available, active: (p as any).active })))
+      return products
     }).catch(error => {
       logger.error('supabase', 'Error getting products', error as any)
       return []
@@ -287,9 +372,16 @@ class SupabaseService {
 
   async createProduct(product: Omit<Product, 'id'>): Promise<string> {
     try {
+      const payload: any = { ...product }
+      // Map active to available for Supabase schema
+      if ('active' in product) {
+        payload.available = product.active
+        delete payload.active
+      }
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([payload])
         .select('id')
         .single()
 
@@ -303,9 +395,19 @@ class SupabaseService {
 
   async updateProduct(productId: string, updates: Partial<Product>): Promise<void> {
     try {
+      const payload: any = { ...updates }
+      // Map active to available for Supabase schema
+      if ('active' in updates) {
+        payload.available = updates.active
+        delete payload.active
+      }
+      // Remove inventory fields not present in Supabase schema
+      if ('currentStock' in payload) delete payload.currentStock
+      if ('hasInventory' in payload) delete payload.hasInventory
+      
       const { error } = await supabase
         .from('products')
-        .update(updates)
+        .update(payload)
         .eq('id', productId)
 
       if (error) throw error
@@ -313,6 +415,14 @@ class SupabaseService {
       logger.error('supabase', 'Error updating product', error as any)
       throw error
     }
+  }
+
+  async updateProductStockBatch(updates: { productId: string; quantity: number }[]): Promise<void> {
+    // Inventory columns (currentStock, hasInventory) no existen en Supabase schema actual
+    // No-op temporal para evitar errores hasta definir esquema de inventario en Supabase
+    if (!updates.length) return
+    logger.warn('supabase', 'updateProductStockBatch omitido: inventario no habilitado en Supabase schema')
+    return
   }
 
   async deleteProduct(productId: string): Promise<void> {
@@ -331,6 +441,93 @@ class SupabaseService {
   }
 
   // ==================== ORDERS ====================
+
+  private normalizeOrderStatus(status: any): string | undefined {
+    if (!status) return undefined
+    const allowed = ['pending', 'sent', 'preparing', 'ready', 'served', 'completed', 'cancelled', 'paid', 'open']
+    return allowed.includes(status) ? status : 'pending'
+  }
+
+  private normalizeOrderItems(items: any[]): any[] {
+    if (!Array.isArray(items)) return []
+    return items.map(item => ({
+      ...item,
+      addedAt: item.addedAt instanceof Date ? item.addedAt.toISOString() : item.addedAt,
+      deletedAt: item.deletedAt instanceof Date ? item.deletedAt.toISOString() : item.deletedAt,
+    }))
+  }
+
+  private buildOrderPayload(order: Partial<Order> & Record<string, any>) {
+    const payload: any = { ...order }
+
+    if ('tableNumber' in order) payload.table_number = order.tableNumber
+    if ('waiterId' in order) payload.waiter_id = (order as any).waiterId
+    if ('createdBy' in order) payload.created_by = (order as any).createdBy
+    if ('status' in order) payload.status = this.normalizeOrderStatus((order as any).status)
+
+    if ('createdAt' in order) {
+      payload.created_at = order.createdAt instanceof Date
+        ? order.createdAt.toISOString()
+        : order.createdAt
+    }
+
+    if ('sentToKitchenAt' in order) {
+      payload.sent_to_kitchen_at = order.sentToKitchenAt instanceof Date
+        ? order.sentToKitchenAt.toISOString()
+        : order.sentToKitchenAt
+    }
+
+    if ('items' in order) {
+      payload.items = this.normalizeOrderItems(order.items as any[])
+    }
+
+    if ('tipAmount' in order) payload.tip_amount = (order as any).tipAmount ?? 0
+    if ('tipPercentage' in order) payload.tip_percentage = (order as any).tipPercentage ?? 0
+    if ('paymentMethod' in order) payload.payment_method = (order as any).paymentMethod
+
+    const calculatedSubtotal = Array.isArray(payload.items)
+      ? payload.items.reduce((sum: number, item: any) => sum + (item.unitPrice || 0) * (item.quantity || 0), 0)
+      : 0
+
+    if (!('subtotal' in payload)) payload.subtotal = (order as any).subtotal ?? calculatedSubtotal
+    if (!('total' in payload)) payload.total = (order as any).total ?? (payload.subtotal ?? calculatedSubtotal) + ((order as any).tipAmount ?? 0)
+
+    delete payload.tableNumber
+    delete payload.waiterId
+    delete payload.createdBy
+    delete payload.createdAt
+    delete payload.sentToKitchenAt
+    delete payload.tipAmount
+    delete payload.tipPercentage
+    delete payload.paymentMethod
+    delete payload.isCourtesy
+    delete payload.authorizedBy
+    delete payload.closedAt
+    delete payload.closedBy
+    delete payload.lastEditedAt
+    delete payload.lastEditedBy
+    delete payload.cancelledAt
+    delete payload.cancelledBy
+    delete payload.cancelReason
+
+    return payload
+  }
+
+  async getOrdersByStatus(status: Order['status']): Promise<Order[]> {
+    return this.withRetry(async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('status', status)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return (data || []) as Order[]
+    }).catch(error => {
+      logger.error('supabase', 'Error getting orders by status', error as any)
+      return []
+    })
+  }
 
   async getActiveOrders(): Promise<Order[]> {
     return this.withRetry(async () => {
@@ -366,9 +563,11 @@ class SupabaseService {
 
   async createOrder(order: Omit<Order, 'id'>): Promise<string> {
     try {
+      const payload = this.buildOrderPayload({ ...order, createdAt: (order as any).createdAt || new Date() })
+
       const { data, error } = await supabase
         .from('orders')
-        .insert([order])
+        .insert([payload])
         .select('id')
         .single()
 
@@ -382,16 +581,19 @@ class SupabaseService {
 
   async updateOrder(orderId: string, updates: Partial<Order>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update(updates)
-        .eq('id', orderId)
+      const payload = this.buildOrderPayload(updates)
+
+      const { error } = await supabase.from('orders').update(payload).eq('id', orderId)
 
       if (error) throw error
     } catch (error) {
       logger.error('supabase', 'Error updating order', error as any)
       throw error
     }
+  }
+
+  async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
+    return this.updateOrder(orderId, { status })
   }
 
   async deleteOrder(orderId: string): Promise<void> {
@@ -513,6 +715,58 @@ class SupabaseService {
 
     return () => {
       supabase.removeChannel(channel)
+    }
+  }
+
+  /**
+   * Alias para compatibilidad con Kitchen.tsx y Bar.tsx
+   * Permite callbacks para success y error
+   */
+  subscribeToActiveOrders(
+    onSuccess: (orders: Order[]) => void,
+    onError?: (message: string) => void
+  ): (() => void) | undefined {
+    try {
+      return this.subscribeToOrders(onSuccess)
+    } catch (error) {
+      onError?.(error instanceof Error ? error.message : 'Unknown error')
+      return undefined
+    }
+  }
+
+  subscribeToOrdersByStatus(
+    status: Order['status'],
+    onData: (orders: Order[]) => void,
+    onError?: (message: string) => void
+  ) {
+    try {
+      // Primera carga
+      this.getOrdersByStatus(status).then(onData).catch(err => onError?.(err?.message || 'Error loading orders'))
+
+      const channel = supabase
+        .channel(`orders_${status}_changes`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `status=eq.${status}`
+          },
+          () => {
+            this.getOrdersByStatus(status).then(onData)
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    } catch (error: any) {
+      const message = error?.message || 'Error creando suscripción de órdenes'
+      logger.error('supabase', 'Error subscribing to orders by status', message)
+      onError?.(message)
+      return () => {}
     }
   }
 

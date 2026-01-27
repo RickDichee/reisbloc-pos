@@ -1,13 +1,10 @@
 // Hook de autenticación
 import { useState } from 'react'
-import { httpsCallable } from 'firebase/functions'
-import { signInWithCustomToken, signOut } from 'firebase/auth'
 import { useAppStore } from '@/store/appStore'
 import deviceService from '@/services/deviceService'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import auditService from '@/services/auditService'
 import { User, Device } from '@/types/index'
-import { functions, auth } from '@/config/firebase'
 import logger from '@/utils/logger'
 
 export function useAuth() {
@@ -41,37 +38,41 @@ export function useAuth() {
       const deviceInfo = await deviceService.getDeviceInfo()
       const fingerprint = deviceService.storeDeviceFingerprint()
 
-      // Llamar a Cloud Function para verificar PIN (sin loguear el PIN)
-      const loginFunction = httpsCallable(functions, 'loginWithPin')
-      const result = await loginFunction({ pin })
-      const data = result.data as any
+      // Buscar usuario por PIN en Supabase
+      const users = await supabaseService.getAllUsers()
+      
+      console.log('🔎 [DEBUG] Usuarios obtenidos:', users.length)
+      console.log('🔎 [DEBUG] PIN ingresado:', pin)
+      console.log('🔎 [DEBUG] PINs en BD:', users.map(u => ({ name: u.name, pin: u.pin, active: (u as any).active })))
+      
+      // Buscar usuario con PIN coincidente
+      const user = users.find(u => u.pin === pin)
+      
+      console.log('🔎 [DEBUG] Usuario encontrado:', user ? user.name : 'NINGUNO')
 
-      if (!data.success || !data.user || !data.token) {
-        setError('Error en autenticación')
+      if (!user) {
+        setError('PIN incorrecto')
         return false
       }
 
-      const user: User = {
-        id: data.user.id,
-        username: data.user.username,
-        role: data.user.role,
-        pin: '', // No exponer el hash
-        active: data.user.active,
-        createdAt: new Date(),
-        devices: data.user.devices || [],
+      if (!user.active) {
+        setError('Usuario inactivo')
+        return false
       }
 
-      logger.info('auth', 'Usuario autenticado', { username: user.username })
-
-      // Autenticar con Firebase Auth usando custom token
-      await signInWithCustomToken(auth, data.token)
-
-      // Obtener o registrar dispositivo
-      const userDevices = await firebaseService.getDevicesByUser(user.id)
-      let device: Device | null =
-        userDevices.find(d => d.macAddress === deviceInfo.macAddress) || null
+      logger.info('auth', 'Usuario autenticado', { name: user.name })
+      
+      // Buscar dispositivo por MAC address (no por userId, porque puede no estar asignado)
+      const allDevices = await supabaseService.getAllDevices()
+      console.log('🔎 [DEBUG] Devices totales:', allDevices.length)
+      console.log('🔎 [DEBUG] MAC del navegador:', deviceInfo.macAddress)
+      console.log('🔎 [DEBUG] MACs en BD:', allDevices.map(d => d.macAddress))
+      
+      let device: Device | null = allDevices.find(d => d.macAddress === deviceInfo.macAddress) || null
+      console.log('🔎 [DEBUG] Device encontrado:', device ? device.id : 'NINGUNO')
 
       if (!device) {
+        // Registrar nuevo dispositivo
         const deviceData = {
           userId: user.id,
           macAddress: deviceInfo.macAddress || 'unknown',
@@ -87,26 +88,37 @@ export function useAuth() {
           isRejected: false,
         }
 
-        const deviceId = await firebaseService.registerDevice(deviceData as any)
+        const deviceId = await supabaseService.registerDevice(deviceData as any)
         device = { id: deviceId, ...deviceData } as Device
         
         // Auto-aprobar si es admin
         if (user.role === 'admin') {
           try {
-            await firebaseService.approveDevice(deviceId)
+            await supabaseService.approveDevice(deviceId)
             device.isApproved = true
             device.isRejected = false
           } catch (e) {
             console.warn('No se pudo auto-aprobar dispositivo (admin):', e)
           }
         }
+      } else {
+        // Dispositivo existe - actualizar user_id y último acceso
+        if (device.userId !== user.id) {
+          await supabaseService.updateDevice(device.id, { userId: user.id })
+          device.userId = user.id
+        }
+        await supabaseService.updateDevice(device.id, { lastAccess: new Date() })
       }
 
+      // Verificar aprobación del dispositivo (mapear status de Supabase)
+      const isDeviceApproved = (device as any).status === 'approved' || device.isApproved
+      const isDeviceRejected = (device as any).status === 'rejected' || device.isRejected
+
       // Si no está aprobado, intentar auto-aprobar si es admin
-      if (!device.isApproved) {
+      if (!isDeviceApproved) {
         if (user.role === 'admin' && device.id) {
           try {
-            await firebaseService.approveDevice(device.id)
+            await supabaseService.approveDevice(device.id)
             device.isApproved = true
             device.isRejected = false
           } catch (e) {
@@ -115,7 +127,7 @@ export function useAuth() {
         }
 
         // Si aún no está aprobado, guardar estado y mostrar pantalla de verificación
-        if (!device.isApproved) {
+        if (!isDeviceApproved && !isDeviceRejected) {
           setCurrentUser(user)
           setCurrentDevice(device)
           setAuthenticated(true)
@@ -135,7 +147,7 @@ export function useAuth() {
       }
 
       // Dispositivo aprobado: actualizar último acceso
-      await firebaseService.updateDevice(device.id, {
+      await supabaseService.updateDevice(device.id, {
         lastAccess: new Date(),
       })
 
@@ -152,9 +164,12 @@ export function useAuth() {
 
       // Cargar datos iniciales
       const [products, usersList] = await Promise.all([
-        firebaseService.getAllProducts(),
-        firebaseService.getAllUsers(),
+        supabaseService.getAllProducts(),
+        supabaseService.getAllUsers(),
       ])
+      
+      console.log('🔎 [DEBUG] Productos cargados:', products.length)
+      console.log('🔎 [DEBUG] Usuarios cargados:', usersList.length)
 
       setCurrentUser(user)
       setCurrentDevice(device)
@@ -190,12 +205,6 @@ export function useAuth() {
         )
       }
 
-      try {
-        await signOut(auth)
-      } catch (e) {
-        // ignore signOut errors to avoid blocking logout
-      }
-
       setAuthenticated(false)
       setCurrentUser(null)
       setCurrentDevice(null)
@@ -216,8 +225,6 @@ export function useAuth() {
       setLoading(true)
       setError(null)
 
-      await ensureAuthSession()
-
       const deviceInfo = await deviceService.getDeviceInfo()
 
       const deviceData = {
@@ -232,7 +239,7 @@ export function useAuth() {
         isApproved: false, // Requiere aprobación de admin
       }
 
-      const deviceId = await firebaseService.registerDevice(deviceData as any)
+      const deviceId = await supabaseService.registerDevice(deviceData as any)
 
       // Registrar en auditoría
       await auditService.logAction(
@@ -243,14 +250,6 @@ export function useAuth() {
         undefined,
         deviceData
       )
-
-      // Actualizar dispositivo del usuario
-      const user = await firebaseService.getUserById(userId)
-      if (user) {
-        await firebaseService.updateUser(userId, {
-          devices: [...(user.devices || []), deviceId],
-        } as any)
-      }
 
       return true
     } catch (err) {
@@ -269,12 +268,12 @@ export function useAuth() {
   const verifyDevice = async (userId: string): Promise<boolean> => {
     try {
       const deviceInfo = await deviceService.getDeviceInfo()
-      const userDevices = await firebaseService.getDevicesByUser(userId)
+      const userDevices = await supabaseService.getDevicesByUser(userId)
 
-      const authorizedDevice = userDevices.find(d => 
-        d.macAddress === deviceInfo.macAddress &&
-        d.isApproved
-      )
+      const authorizedDevice = userDevices.find(d => {
+        const isApproved = (d as any).status === 'approved' || d.isApproved
+        return d.macAddress === deviceInfo.macAddress && isApproved
+      })
 
       if (authorizedDevice) {
         setCurrentDevice(authorizedDevice)
@@ -294,7 +293,7 @@ export function useAuth() {
   const getUserDevices = async (): Promise<Device[]> => {
     try {
       if (!currentUser?.id) return []
-      return await firebaseService.getDevicesByUser(currentUser.id)
+      return await supabaseService.getDevicesByUser(currentUser.id)
     } catch (err) {
       console.error('Get user devices error:', err)
       return []

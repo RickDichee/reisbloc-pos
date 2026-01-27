@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import {
   TrendingUp,
   DollarSign,
@@ -63,21 +63,103 @@ export default function Reports() {
       const endDate = new Date(dateRange.to)
       endDate.setHours(23, 59, 59, 999)
 
-      const [data, products, employees, metricsData] = await Promise.all([
-        firebaseService.getSalesByDateRange(startDate, endDate),
-        firebaseService.getTopProducts(startDate, endDate, 5),
-        firebaseService.getEmployeeMetrics(startDate, endDate),
-        firebaseService.getSalesMetrics(startDate, endDate),
-      ])
+      // Obtener ventas desde Supabase
+      const sales = await supabaseService.getSalesByDateRange(startDate, endDate)
 
-      // Formatear datos para gráfico de línea (por día)
-      const chartData = Object.entries(data.byDay)
+      // Agrupar por día
+      const byDay: Record<string, any[]> = {}
+      sales.forEach((sale: any) => {
+        const date = sale.created_at ? new Date(sale.created_at) : new Date()
+        const dayKey = date.toISOString().split('T')[0]
+        if (!byDay[dayKey]) byDay[dayKey] = []
+        byDay[dayKey].push(sale)
+      })
+
+      // Chart data por día
+      const chartData = Object.entries(byDay)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([day, sales]: [string, any[]]) => ({
           date: new Date(day).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }),
-          total: sales.reduce((sum, s) => sum + s.total, 0),
+          total: sales.reduce((sum, s: any) => sum + Number(s.total || 0), 0),
           transactions: sales.length,
         }))
+
+      // Top productos a partir de items en sales
+      const productMap: Record<string, { name: string; qty: number; total: number }> = {}
+      sales.forEach((sale: any) => {
+        ;(sale.items || []).forEach((item: any) => {
+          const pid = item.productId || item.product_id || item.id
+          const pname = item.productName || item.name || 'Producto'
+          if (!productMap[pid]) productMap[pid] = { name: pname, qty: 0, total: 0 }
+          productMap[pid].qty += Number(item.quantity || 0)
+          productMap[pid].total += Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0)
+        })
+      })
+      const products = Object.values(productMap)
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 5)
+        .map((p, i) => ({ id: i, ...p }))
+
+      // Métricas por empleado (mesero)
+      const users = await supabaseService.getAllUsers()
+      const byUser: Record<string, any> = {}
+      users.forEach(u => {
+        byUser[u.id] = {
+          userId: u.id,
+          userName: (u as any).username || (u as any).name || 'Usuario',
+          role: u.role,
+          salesCount: 0,
+          totalSales: 0,
+          totalTips: 0,
+          averageTicket: 0,
+          averageTip: 0,
+        }
+      })
+      sales.forEach((sale: any) => {
+        const uid = sale.waiter_id || sale.saleBy
+        if (uid && byUser[uid]) {
+          byUser[uid].salesCount += 1
+          byUser[uid].totalSales += Number(sale.total || 0)
+          byUser[uid].totalTips += Number(sale.tip_amount || sale.tip || 0)
+        }
+      })
+      const employees = Object.values(byUser)
+        .filter((m: any) => m.salesCount > 0)
+        .map((m: any) => ({
+          ...m,
+          averageTicket: m.salesCount ? m.totalSales / m.salesCount : 0,
+          averageTip: m.salesCount ? m.totalTips / m.salesCount : 0,
+        }))
+        .sort((a: any, b: any) => b.totalSales - a.totalSales)
+
+      // Métricas generales
+      const metricsData = sales.reduce(
+        (acc: any, sale: any) => {
+          const total = Number(sale.total || 0)
+          const tip = Number(sale.tip_amount || sale.tip || 0)
+          acc.totalSales += total
+          acc.totalTips += tip
+          acc.transactionCount += 1
+          const method = (sale.payment_method || '').toLowerCase()
+          if (method === 'cash') acc.totalCash += total
+          else if (method === 'digital') acc.totalDigital += total
+          else if (method === 'clip') acc.totalClip += total
+          return acc
+        },
+        {
+          totalSales: 0,
+          totalCash: 0,
+          totalDigital: 0,
+          totalClip: 0,
+          totalTips: 0,
+          totalDiscounts: 0,
+          transactionCount: 0,
+          averageTicket: 0,
+        }
+      )
+      metricsData.averageTicket = metricsData.transactionCount
+        ? metricsData.totalSales / metricsData.transactionCount
+        : 0
 
       setSalesData(chartData)
       setTopProducts(products)

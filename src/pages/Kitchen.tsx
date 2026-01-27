@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import logger from '@/utils/logger'
 import { ChefHat, Clock, CheckCircle2, AlertCircle, Bell, Eye } from 'lucide-react'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService' // Changed from firebaseService
 import { Order } from '@/types/index'
 import EditOrderModal from '@/components/admin/EditOrderModal'
 import { useAppStore } from '@/store/appStore'
@@ -25,7 +25,7 @@ export default function Kitchen() {
     audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBiuBzvLZiDYIF2W79+qbUg8OTqvn8raKOwcVa7r3GMUBAAAAAAABAAAAA')
     
     logger.info('kitchen', 'Component mounted')
-    const unsubscribe = firebaseService.subscribeToActiveOrders(
+    const unsubscribe = supabaseService.subscribeToActiveOrders( // Changed from firebaseService
       (data) => {
         const normalizedOrders = data.map(order => ({
           ...order,
@@ -62,7 +62,7 @@ export default function Kitchen() {
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
     try {
       const order = orders.find(o => o.id === orderId)
-      await firebaseService.updateOrderStatus(orderId, newStatus)
+      await supabaseService.updateOrderStatus(orderId, newStatus)
       
       // Notificar cuando la orden está lista
       if (newStatus === 'ready' && order) {
@@ -304,12 +304,22 @@ export default function Kitchen() {
           order={viewOrder}
           onClose={() => setViewOrder(null)}
           onSave={async (updatedItems, notes) => {
-            await firebaseService.updateOrderItems(viewOrder.id, updatedItems, notes, currentUser.id)
+            await supabaseService.updateOrder(viewOrder.id, {
+              items: updatedItems,
+              notes,
+              lastEditedAt: new Date(),
+              lastEditedBy: currentUser.id
+            })
             setViewOrder(null)
             alert('✅ Orden actualizada')
           }}
           onCancel={async (reason) => {
-            await firebaseService.cancelOrder(viewOrder.id, reason, currentUser.id)
+            await supabaseService.updateOrder(viewOrder.id, {
+              status: 'cancelled',
+              cancelReason: reason,
+              cancelledBy: currentUser.id,
+              cancelledAt: new Date()
+            })
             setViewOrder(null)
             alert('✅ Orden cancelada')
           }}

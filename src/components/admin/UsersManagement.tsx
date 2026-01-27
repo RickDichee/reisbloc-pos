@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import firebaseService from '@/services/firebaseService'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/config/firebase'
+import supabaseService from '@/services/supabaseService'
 import { User, UserRole } from '@/types/index'
+import bcrypt from 'bcryptjs'
 import { 
   Plus, 
   Edit2, 
@@ -30,7 +29,7 @@ export default function UsersManagement() {
   const loadUsers = async () => {
     setLoading(true)
     try {
-      const loadedUsers = await firebaseService.getAllUsers()
+      const loadedUsers = await supabaseService.getAllUsers()
       setUsers(loadedUsers)
     } catch (error) {
       console.error('Error loading users:', error)
@@ -47,7 +46,7 @@ export default function UsersManagement() {
     }
 
     try {
-      await firebaseService.updateUser(user.id, { active: !user.active })
+      await supabaseService.updateUser(user.id, { active: !user.active })
       await loadUsers()
     } catch (error) {
       console.error('Error toggling user:', error)
@@ -67,7 +66,7 @@ export default function UsersManagement() {
     }
 
     try {
-      await firebaseService.deleteUser(user.id)
+      await supabaseService.deleteUser(user.id)
       await loadUsers()
     } catch (error) {
       console.error('Error deleting user:', error)
@@ -264,32 +263,26 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
     setLoading(true)
     try {
-      // Llamar a Cloud Function para crear usuario con PIN hasheado
-      const createUserFunc = httpsCallable(functions, 'createUserWithHashedPin')
-      const result = await createUserFunc({
+      // Hash el PIN con bcryptjs (10 rounds, same as backend)
+      const hashedPin = await bcrypt.hash(formData.pin, 10)
+      
+      // Crear usuario directamente en Supabase
+      await supabaseService.createUser({
         username: formData.username,
-        pin: formData.pin,
+        pin: hashedPin,
         role: formData.role,
         active: true,
-        devices: [],
-      })
+      } as any)
 
-      const data = result.data as any
-      if (data.success) {
-        alert('✅ Usuario creado exitosamente')
-        onSuccess()
-        onClose()
-      } else {
-        alert('❌ Error al crear usuario')
-      }
+      alert('✅ Usuario creado exitosamente')
+      onSuccess()
+      onClose()
     } catch (error: any) {
       console.error('Error creating user:', error)
-      if (error.code === 'functions/already-exists') {
+      if (error.code === 'PGRST204' || error.message?.includes('duplicate')) {
         alert('❌ El nombre de usuario ya existe')
-      } else if (error.code === 'functions/invalid-argument') {
-        alert('❌ ' + error.message)
       } else {
-        alert('❌ Error al crear usuario')
+        alert('❌ Error al crear usuario: ' + (error.message || 'Error desconocido'))
       }
     } finally {
       setLoading(false)
@@ -393,7 +386,7 @@ function EditUserModal({
     
     setLoading(true)
     try {
-      await firebaseService.updateUser(user.id, {
+      await supabaseService.updateUser(user.id, {
         username: formData.username,
         role: formData.role,
       })

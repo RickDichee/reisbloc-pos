@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import logger from '@/utils/logger'
 import { Wine, Clock, AlertCircle, Bell } from 'lucide-react'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService' // Changed from firebaseService
 import { Order } from '@/types/index'
 import { sendNotificationToUsers } from '@/services/sendNotificationHelper'
 import { useAppStore } from '@/store/appStore'
@@ -22,7 +22,7 @@ export default function Bar() {
     audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBiuBzvLZiDYIF2W79+qbUg8OTqvn8raKOwcVa7r3GMUBAAAAAAABAAAAA')
     
     logger.info('bar', 'Component mounted')
-    const unsubscribe = firebaseService.subscribeToActiveOrders(
+    const unsubscribe = supabaseService.subscribeToActiveOrders( // Changed from firebaseService
       (data) => {
         const normalizedOrders = data.map(order => ({
           ...order,
@@ -58,7 +58,7 @@ export default function Bar() {
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
     try {
       const order = orders.find(o => o.id === orderId)
-      await firebaseService.updateOrderStatus(orderId, newStatus)
+      await supabaseService.updateOrderStatus(orderId, newStatus)
       
       // Notificar cuando la orden está lista
       if (newStatus === 'ready' && order) {

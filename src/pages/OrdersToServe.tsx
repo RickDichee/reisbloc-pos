@@ -3,7 +3,7 @@ import logger from '@/utils/logger'
 import { Navigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import { Order } from '@/types'
 import { ChefHat, Clock, CheckCircle, Users, Bell } from 'lucide-react'
 import TipsWidget from '@/components/common/TipsWidget'
@@ -46,7 +46,7 @@ export default function OrdersToServe() {
     // Solo meseros pueden ver órdenes para servir
     if (!canModifyOrders) return
 
-    const unsubscribe = firebaseService.subscribeToOrdersByStatus('ready', (data) => {
+    const unsubscribe = supabaseService.subscribeToOrdersByStatus('ready', (data) => {
       const normalized = (data || []).map(order => ({
         ...order,
         createdAt: normalizeDate((order as any).createdAt),
@@ -98,7 +98,7 @@ export default function OrdersToServe() {
 
     setBusyOrders(prev => ({ ...prev, [orderId]: true }))
     try {
-      await firebaseService.updateOrderStatus(orderId, 'served')
+      await supabaseService.updateOrderStatus(orderId, 'served')
       setOrders(prev => prev.filter(o => o.id !== orderId))
     } catch (err: any) {
       setError(err?.message || 'No se pudo marcar como servida')

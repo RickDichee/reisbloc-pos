@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import logger from '@/utils/logger'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import { Order, Product } from '@/types/index'
 import { Clock, CheckCircle, Flame } from 'lucide-react'
 
@@ -19,7 +19,7 @@ export default function KitchenDashboard() {
 
   const loadProducts = async () => {
     try {
-      const prods = await firebaseService.getAllProducts()
+      const prods = await supabaseService.getAllProducts()
       setProducts(prods)
     } catch (error) {
       logger.error('kitchen-dashboard', 'Error loading products', error as any)
@@ -28,7 +28,7 @@ export default function KitchenDashboard() {
 
   const subscribeToOrders = () => {
     // Suscribirse a órdenes enviadas
-    const unsubSent = firebaseService.subscribeToOrdersByStatus('sent', (orders) => {
+    const unsubSent = supabaseService.subscribeToOrdersByStatus('sent', (orders) => {
       setSentOrders(orders.sort((a, b) => {
         const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0
         const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0
@@ -38,7 +38,7 @@ export default function KitchenDashboard() {
     })
 
     // Suscribirse a órdenes listas
-    const unsubReady = firebaseService.subscribeToOrdersByStatus('ready', (orders) => {
+    const unsubReady = supabaseService.subscribeToOrdersByStatus('ready', (orders) => {
       setReadyOrders(orders.sort((a, b) => {
         const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0
         const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0
@@ -47,7 +47,7 @@ export default function KitchenDashboard() {
     })
 
     // Suscribirse a órdenes completadas (últimas 5)
-    const unsubCompleted = firebaseService.subscribeToOrdersByStatus('completed', (orders) => {
+    const unsubCompleted = supabaseService.subscribeToOrdersByStatus('completed', (orders) => {
       setCompletedOrders(
         orders
           .sort((a, b) => {
@@ -68,7 +68,7 @@ export default function KitchenDashboard() {
 
   const markAsReady = async (orderId: string) => {
     try {
-      await firebaseService.updateOrderStatus(orderId, 'ready')
+      await supabaseService.updateOrderStatus(orderId, 'ready')
       logger.info('kitchen-dashboard', 'Orden marcada como lista', { orderId })
     } catch (error) {
       logger.error('kitchen-dashboard', 'Error marking order as ready', error as any)
@@ -77,7 +77,7 @@ export default function KitchenDashboard() {
 
   const markAsCompleted = async (orderId: string) => {
     try {
-      await firebaseService.updateOrderStatus(orderId, 'completed')
+      await supabaseService.updateOrderStatus(orderId, 'completed')
       logger.info('kitchen-dashboard', 'Orden marcada como completada', { orderId })
     } catch (error) {
       logger.error('kitchen-dashboard', 'Error marking order as completed', error as any)

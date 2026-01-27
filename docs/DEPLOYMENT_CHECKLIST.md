@@ -29,6 +29,61 @@
 - [x] Firestore rules comentadas (desarrollo activo) ⚠️
   - **IMPORTANTE**: Antes de producción, DESCOMENTAR reglas en firestore.rules
 
+### ⚠️ MIGRACIÓN SUPABASE (En Proceso)
+
+**Estado Actual:** Parcialmente migrado a Supabase PostgreSQL
+- [x] Users, Devices, Products migrados
+- [x] Orders, Sales migrados
+- [x] TableMonitor, Kitchen, Bar, POS usando Supabase
+- [ ] **CRÍTICO ANTES DE PRODUCCIÓN**: Implementar seguridad RLS correcta
+
+#### 🔒 OPCIONES DE SEGURIDAD SUPABASE (ELEGIR UNA ANTES DE PRODUCCIÓN):
+
+**⚠️ ACTUALMENTE:** Usando `anon` role con RLS abierto (SOLO DESARROLLO)
+
+**Opción 1: Supabase Auth + JWT (RECOMENDADA)**
+- Migrar sistema PIN actual a Supabase Auth
+- Usuarios harían login real con credenciales
+- Cliente conecta como `authenticated` role
+- RLS policies restringidas a `authenticated`
+- ✅ Ventajas: Seguridad real, auditoría integrada, sesiones manejadas
+- ❌ Desventajas: Requiere refactorizar sistema PIN actual
+
+**Opción 2: JWT Personalizado desde Backend**
+- Mantener sistema PIN actual en frontend
+- Backend/Cloud Function valida PIN y genera JWT firmado
+- JWT incluye claims (user_id, role, etc.)
+- Supabase RLS valida JWT claims
+- ✅ Ventajas: Mantiene UX actual, seguridad correcta
+- ❌ Desventajas: Requiere serverless function para generar tokens
+
+**Opción 3: RLS con `anon` Restringido**
+- Mantener `anon` role pero con policies específicas
+- Validar campos requeridos en WITH CHECK
+- Ejemplo:
+  ```sql
+  CREATE POLICY "Orders require valid user" ON orders
+    FOR INSERT TO anon
+    WITH CHECK (
+      created_by IS NOT NULL AND 
+      EXISTS (SELECT 1 FROM users WHERE id = created_by AND active = true)
+    );
+  ```
+- ✅ Ventajas: Rápido de implementar
+- ❌ Desventajas: Seguridad limitada, vulnerable sin validación adicional
+
+**Opción 4: Service Role (NUNCA EN FRONTEND)**
+- Solo para backend/admin tools
+- Bypasea completamente RLS
+- ❌ NUNCA exponer service_role key en código frontend
+
+**ACCIÓN REQUERIDA:**
+- [ ] Elegir opción de seguridad antes de deploy a producción
+- [ ] Implementar opción elegida
+- [ ] Actualizar policies RLS en Supabase
+- [ ] Probar autenticación y permisos en staging
+- [ ] Documentar proceso de autenticación para equipo
+
 ### ✅ Cloud Functions
 
 - [x] functions/package.json actualizado

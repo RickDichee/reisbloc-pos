@@ -5,6 +5,7 @@ import {
   subscribeToNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  NOTIFICATIONS_ENABLED,
   type Notification
 } from '../services/notificationService'
 
@@ -16,7 +17,7 @@ export function useNotifications(userId: string | null) {
 
   // Inicializar permisos y listeners
   useEffect(() => {
-    if (!userId) return
+    if (!userId || !NOTIFICATIONS_ENABLED) return
 
     // Verificar permiso actual
     if (typeof Notification !== 'undefined') {
@@ -43,7 +44,7 @@ export function useNotifications(userId: string | null) {
 
   // Solicitar permiso de notificaciones
   const requestPermission = async () => {
-    if (!userId) return
+    if (!userId || !NOTIFICATIONS_ENABLED) return
 
     setIsLoading(true)
     try {

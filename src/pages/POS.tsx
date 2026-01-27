@@ -3,7 +3,7 @@ import logger from '@/utils/logger'
 import { useAppStore } from '@/store/appStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import { APP_CONFIG } from '@/config/constants'
 import ProductGrid from '@/components/pos/ProductGrid'
 import OrderPanel from '@/components/pos/OrderPanel'
@@ -68,7 +68,7 @@ export default function POS() {
 
   // Monitorear órdenes listas en tiempo real
   useEffect(() => {
-    const unsubscribe = firebaseService.subscribeToOrdersByStatus('ready', (readyOrders) => {
+    const unsubscribe = supabaseService.subscribeToOrdersByStatus('ready', (readyOrders) => {
       const count = readyOrders.length
       setReadyOrdersCount(count)
 
@@ -86,7 +86,7 @@ export default function POS() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const prods = await firebaseService.getAllProducts()
+      const prods = await supabaseService.getAllProducts()
       setProducts(prods)
     } catch (error) {
       logger.error('pos', 'Error loading products', error as any)
@@ -192,7 +192,7 @@ export default function POS() {
 
       // Crear orden para Cocina (comida)
       if (foodItems.length > 0) {
-        const foodOrderId = await firebaseService.createOrder({
+        const foodOrderId = await supabaseService.createOrder({
           tableNumber,
           items: foodItems,
           status: 'sent',
@@ -223,7 +223,7 @@ export default function POS() {
 
       // Crear orden para Bar (bebidas)
       if (drinkItems.length > 0) {
-        const drinkOrderId = await firebaseService.createOrder({
+        const drinkOrderId = await supabaseService.createOrder({
           tableNumber,
           items: drinkItems,
           status: 'sent',
@@ -254,8 +254,8 @@ export default function POS() {
 
       // Decrementar stock
       if (stockUpdates.length > 0) {
-        await firebaseService.updateProductStockBatch(stockUpdates)
-        const updatedProducts = await firebaseService.getAllProducts()
+        await supabaseService.updateProductStockBatch(stockUpdates)
+        const updatedProducts = await supabaseService.getAllProducts()
         setProducts(updatedProducts)
       }
 
@@ -282,7 +282,7 @@ export default function POS() {
       const mappedMethod = result.paymentMethod === 'card' ? 'clip' : result.paymentMethod
 
       // Registrar venta
-      await firebaseService.createSale({
+      await supabaseService.createSale({
         orderIds: [paymentPanel.orderId],
         tableNumber,
         items,
@@ -300,7 +300,7 @@ export default function POS() {
       } as any)
 
       // IMPORTANTE: Marcar la orden como completada para consolidar la mesa
-      await firebaseService.updateOrderStatus(paymentPanel.orderId, 'completed')
+      await supabaseService.updateOrderStatus(paymentPanel.orderId, 'completed')
 
       // Imprimir ticket final con monto, propina y método de pago
       try {

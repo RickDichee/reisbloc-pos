@@ -1,5 +1,201 @@
 # Documentación de Seguridad - Reisbloc POS
 
+## ⚠️ ESTADO DE MIGRACIÓN A SUPABASE
+
+**CRÍTICO:** La aplicación está en proceso de migración de Firebase a Supabase PostgreSQL.
+
+### Seguridad RLS Actual (SOLO DESARROLLO)
+
+**⚠️ CONFIGURACIÓN TEMPORAL - NO USAR EN PRODUCCIÓN**
+
+El sistema actualmente usa Supabase con políticas RLS abiertas al role `anon`:
+```sql
+-- TEMPORAL - Solo desarrollo
+CREATE POLICY "Orders are viewable" ON orders
+  FOR SELECT TO authenticated, anon USING (true);
+```
+
+Esto permite desarrollo rápido pero **NO ES SEGURO** para producción.
+
+---
+
+## 🔒 OPCIONES DE SEGURIDAD PARA PRODUCCIÓN
+
+**DEBE implementarse UNA de estas opciones antes del deploy:**
+
+### Opción 1: Supabase Auth + JWT (⭐ RECOMENDADA)
+
+**Descripción:** Migrar completamente a sistema de autenticación Supabase
+
+**Implementación:**
+1. Crear usuarios en Supabase Auth (email/password)
+2. Mapear usuarios existentes → Supabase Auth
+3. Modificar login para usar `supabase.auth.signInWithPassword()`
+4. Cliente automáticamente obtiene JWT
+5. Actualizar RLS policies:
+```sql
+-- Solo usuarios autenticados
+CREATE POLICY "Orders viewable by authenticated" ON orders
+  FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY "Orders insertable by authenticated" ON orders
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid()::text = created_by);
+```
+
+**Pros:**
+- Seguridad robusta out-of-the-box
+- Manejo de sesiones automático
+- Renovación de tokens integrada
+- Auditoría y logs de Supabase
+
+**Contras:**
+- Requiere refactorizar sistema PIN
+- Cambio en UX de login
+- Migración de usuarios existentes
+
+**Esfuerzo:** 2-3 días
+
+---
+
+### Opción 2: JWT Personalizado desde Cloud Function (⭐ RECOMENDADA para mantener UX actual)
+
+**Descripción:** Mantener login con PIN, generar JWT válido para Supabase
+
+**Implementación:**
+1. Crear Cloud Function/Serverless endpoint:
+```typescript
+// functions/generateSupabaseToken.ts
+export const generateSupabaseToken = functions.https.onCall(async (data, context) => {
+  const { pin } = data;
+  
+  // Validar PIN contra Supabase
+  const user = await supabase
+    .from('users')
+    .select('*')
+    .eq('pin', hashedPin)
+    .single();
+    
+  if (!user) throw new Error('Invalid PIN');
+  
+  // Generar JWT firmado con secret de Supabase
+  const token = jwt.sign(
+    {
+      sub: user.id,
+      role: user.role,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24h
+    },
+    SUPABASE_JWT_SECRET
+  );
+  
+  return { token, user };
+});
+```
+
+2. Frontend usa token:
+```typescript
+// useAuth.ts
+const { token } = await generateSupabaseToken({ pin });
+supabase.auth.setSession({ access_token: token });
+```
+
+3. RLS policies validan JWT:
+```sql
+CREATE POLICY "Orders viewable by role" ON orders
+  FOR SELECT TO authenticated
+  USING (
+    (auth.jwt()->>'role')::text IN ('admin', 'capitan', 'mesero')
+  );
+```
+
+**Pros:**
+- Mantiene UX actual (PIN login)
+- Seguridad correcta con JWT
+- Compatible con sistema de dispositivos
+
+**Contras:**
+- Requiere backend/function adicional
+- Manejo manual de renovación de tokens
+
+**Esfuerzo:** 1-2 días
+
+---
+
+### Opción 3: RLS Restrictivo con `anon`
+
+**Descripción:** Mantener `anon` role pero con validación estricta
+
+**Implementación:**
+```sql
+-- Validar que created_by sea usuario válido
+CREATE POLICY "Orders insertable with valid user" ON orders
+  FOR INSERT TO anon
+  WITH CHECK (
+    created_by IS NOT NULL AND
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = created_by 
+      AND active = true
+    )
+  );
+
+-- Validar que updates solo cambien campos permitidos
+CREATE POLICY "Orders updatable restricted" ON orders
+  FOR UPDATE TO anon
+  USING (true)
+  WITH CHECK (
+    -- No permitir cambiar created_by
+    created_by = (SELECT created_by FROM orders WHERE id = orders.id)
+  );
+```
+
+**Pros:**
+- Rápido de implementar
+- No requiere cambios en código
+
+**Contras:**
+- Menos seguro que opciones 1 y 2
+- Vulnerable sin capa adicional de validación
+- Difícil auditar quién hizo qué
+
+**Esfuerzo:** 1 día
+
+---
+
+### Opción 4: Service Role Key (❌ NUNCA EN FRONTEND)
+
+**Solo para:**
+- Scripts de migración/admin
+- Herramientas internas
+- Backend servers
+
+```typescript
+// CORRECTO: Solo en backend
+const supabaseAdmin = createClient(url, SERVICE_ROLE_KEY);
+
+// ❌ INCORRECTO: Nunca en frontend
+const supabase = createClient(url, SERVICE_ROLE_KEY); // NO HACER
+```
+
+---
+
+## 📝 Checklist de Implementación
+
+Antes de producción:
+
+- [ ] Elegir opción de seguridad (1, 2, o 3)
+- [ ] Implementar opción elegida
+- [ ] Actualizar todas las RLS policies
+- [ ] Eliminar policies con `TO anon` abiertas
+- [ ] Probar autenticación en staging
+- [ ] Probar permisos por role
+- [ ] Auditar logs de acceso
+- [ ] Documentar flujo para equipo
+- [ ] Plan de rollback en caso de problemas
+
+---
+
 ## 🔒 Sistema de Registro de Dispositivos
 
 ### Descripción General

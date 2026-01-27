@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import { useAppStore } from '@/store/appStore'
 import logger from '@/utils/logger'
 
@@ -28,7 +28,7 @@ export default function TipsWidget() {
       tomorrow.setDate(tomorrow.getDate() + 1)
 
       // Obtener ventas del día
-      const { sales } = await firebaseService.getSalesByDateRange(today, tomorrow)
+      const sales = await supabaseService.getSalesByDateRange(today, tomorrow)
       
       // Filtrar ventas del usuario actual (si no es admin/supervisor)
       const userSales = ['admin', 'supervisor', 'capitan'].includes(currentUser.role)
@@ -41,7 +41,7 @@ export default function TipsWidget() {
       // Calcular propinas de la semana (últimos 7 días)
       const weekStart = new Date(today)
       weekStart.setDate(weekStart.getDate() - 7)
-      const { sales: weekSales } = await firebaseService.getSalesByDateRange(weekStart, tomorrow)
+      const weekSales = await supabaseService.getSalesByDateRange(weekStart, tomorrow)
       const userWeekSales = ['admin', 'supervisor', 'capitan'].includes(currentUser.role)
         ? weekSales
         : weekSales.filter(s => s.saleBy === currentUser.id)
@@ -49,7 +49,7 @@ export default function TipsWidget() {
 
       // Calcular propinas del mes
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      const { sales: monthSales } = await firebaseService.getSalesByDateRange(monthStart, tomorrow)
+      const monthSales = await supabaseService.getSalesByDateRange(monthStart, tomorrow)
       const userMonthSales = ['admin', 'supervisor', 'capitan'].includes(currentUser.role)
         ? monthSales
         : monthSales.filter(s => s.saleBy === currentUser.id)

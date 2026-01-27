@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import { Product } from '@/types/index'
 import { 
   Plus, 
@@ -30,7 +30,7 @@ export default function InventoryManagement() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const loadedProducts = await firebaseService.getAllProducts()
+      const loadedProducts = await supabaseService.getAllProducts()
       setProducts(loadedProducts)
     } catch (error) {
       console.error('Error loading products:', error)
@@ -43,7 +43,7 @@ export default function InventoryManagement() {
     if (isReadOnly) return
 
     try {
-      await firebaseService.updateProduct(product.id, { active: !product.active })
+      await supabaseService.updateProduct(product.id, { active: !product.active })
       await loadProducts()
     } catch (error) {
       console.error('Error toggling product:', error)
@@ -59,7 +59,7 @@ export default function InventoryManagement() {
     }
 
     try {
-      await firebaseService.deleteProduct(product.id)
+      await supabaseService.deleteProduct(product.id)
       await loadProducts()
     } catch (error) {
       console.error('Error deleting product:', error)
@@ -77,7 +77,7 @@ export default function InventoryManagement() {
     }
 
     try {
-      await firebaseService.updateProduct(product.id, { currentStock: newStock })
+      await supabaseService.updateProduct(product.id, { currentStock: newStock })
       await loadProducts()
     } catch (error) {
       console.error('Error adjusting stock:', error)
@@ -394,9 +394,9 @@ function ProductModal({
     setLoading(true)
     try {
       if (product) {
-        await firebaseService.updateProduct(product.id, formData)
+        await supabaseService.updateProduct(product.id, formData)
       } else {
-        await firebaseService.createProduct({
+        await supabaseService.createProduct({
           ...formData,
           createdAt: new Date(),
         })

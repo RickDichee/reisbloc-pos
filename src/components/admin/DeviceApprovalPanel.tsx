@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Loader, AlertCircle, Smartphone } from 'lucide-react';
-import firebaseService from '../../services/firebaseService'; // Corrected import
+import supabaseService from '../../services/supabaseService'; // Changed from firebaseService
 import { Device } from '../../types';
 
 /**
@@ -33,7 +33,7 @@ export const DeviceApprovalPanel: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const allDevices = await firebaseService.getAllDevices(); // Corrected to fetch devices
+      const allDevices = await supabaseService.getAllDevices(); // Changed from firebaseService
       console.log('Dispositivos cargados:', allDevices);
       setDevices(allDevices);
     } catch (err) {
@@ -51,7 +51,7 @@ export const DeviceApprovalPanel: React.FC = () => {
   const approveDevice = async (deviceId: string) => {
     setProcessingId(deviceId);
     try {
-      await firebaseService.approveDevice(deviceId);
+      await supabaseService.approveDevice(deviceId); // Changed from firebaseService
       
       // Actualizar estado local
       setDevices(devices.map(d => 
@@ -79,7 +79,7 @@ export const DeviceApprovalPanel: React.FC = () => {
 
     setProcessingId(deviceId);
     try {
-      await firebaseService.revokeDevice(deviceId);
+      await supabaseService.revokeDevice(deviceId); // Changed from firebaseService
 
       // Actualizar estado local
       setDevices(devices.map(d => 

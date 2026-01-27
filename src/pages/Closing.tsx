@@ -3,7 +3,7 @@ import logger from '@/utils/logger'
 import { Navigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import firebaseService from '@/services/firebaseService'
+import supabaseService from '@/services/supabaseService'
 import {
   DollarSign,
   Check,
@@ -49,10 +49,69 @@ export default function Closing() {
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
 
-      const [metrics, employees] = await Promise.all([
-        firebaseService.getSalesMetrics(today, tomorrow),
-        firebaseService.getEmployeeMetrics(today, tomorrow),
-      ])
+      // Obtener ventas del día desde Supabase y calcular métricas localmente
+      const sales = await supabaseService.getSalesByDateRange(today, tomorrow)
+
+      // Métricas generales de cierre
+      const metrics = sales.reduce(
+        (acc: any, sale: any) => {
+          const total = Number(sale.total || 0)
+          const tip = Number(sale.tip_amount || sale.tip || 0)
+          acc.totalSales += total
+          acc.totalTips += tip
+          acc.transactionCount += 1
+          const method = (sale.payment_method || '').toLowerCase()
+          if (method === 'cash') acc.totalCash += total
+          else if (method === 'digital') acc.totalDigital += total
+          else if (method === 'clip') acc.totalClip += total
+          return acc
+        },
+        {
+          totalSales: 0,
+          totalCash: 0,
+          totalDigital: 0,
+          totalClip: 0,
+          totalTips: 0,
+          totalDiscounts: 0,
+          transactionCount: 0,
+          averageTicket: 0,
+        }
+      )
+      metrics.averageTicket = metrics.transactionCount
+        ? metrics.totalSales / metrics.transactionCount
+        : 0
+
+      // Métricas por empleado
+      const users = await supabaseService.getAllUsers()
+      const byUser: Record<string, any> = {}
+      users.forEach(u => {
+        byUser[u.id] = {
+          userId: u.id,
+          userName: (u as any).username || (u as any).name || 'Usuario',
+          role: u.role,
+          salesCount: 0,
+          totalSales: 0,
+          totalTips: 0,
+          averageTicket: 0,
+          averageTip: 0,
+        }
+      })
+      sales.forEach((sale: any) => {
+        const uid = sale.waiter_id || sale.saleBy
+        if (uid && byUser[uid]) {
+          byUser[uid].salesCount += 1
+          byUser[uid].totalSales += Number(sale.total || 0)
+          byUser[uid].totalTips += Number(sale.tip_amount || sale.tip || 0)
+        }
+      })
+      const employees = Object.values(byUser)
+        .filter((m: any) => m.salesCount > 0)
+        .map((m: any) => ({
+          ...m,
+          averageTicket: m.salesCount ? m.totalSales / m.salesCount : 0,
+          averageTip: m.salesCount ? m.totalTips / m.salesCount : 0,
+        }))
+        .sort((a: any, b: any) => b.totalSales - a.totalSales)
 
       setClosingData(metrics)
       setEmployeeMetrics(employees)
@@ -81,10 +140,8 @@ export default function Closing() {
         status: 'closed',
       }
 
-      // Guardar en Firestore
-      await firebaseService.saveClosing(closingRecord)
-
-      alert('✅ Cierre de caja completado exitosamente')
+      // Guardado deshabilitado hasta migrar a Supabase (no existe tabla closings)
+      alert('✅ Cierre de caja calculado. Guardado deshabilitado temporalmente (migración a Supabase)')
       setConfirmed(false)
       setNotes('')
       loadClosingData()
