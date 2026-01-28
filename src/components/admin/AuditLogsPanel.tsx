@@ -33,7 +33,7 @@ export default function AuditLogsPanel() {
   const loadLogs = async () => {
     setLoading(true)
     try {
-      // TODO: Implementar firebaseService.getAuditLogs()
+      // TODO: Implementar LEGACY_FIREBASEService.getAuditLogs()
       // Por ahora, logs de ejemplo
       const mockLogs: AuditLog[] = [
         {

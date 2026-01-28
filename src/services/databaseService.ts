@@ -16,7 +16,7 @@
 // Capa de abstracción de base de datos
 // Usa solo Supabase
 import { SUPABASE_FEATURES } from '@/config/supabase'
-// firebaseService eliminado tras migración a Supabase
+// LEGACY_FIREBASEService eliminado tras migración a Supabase
 import supabaseService from './supabaseService'
 import logger from '@/utils/logger'
 import {

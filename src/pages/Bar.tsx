@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import logger from '@/utils/logger'
 import { Wine, Clock, AlertCircle, Bell } from 'lucide-react'
-import supabaseService from '@/services/supabaseService' // Changed from firebaseService
+import supabaseService from '@/services/supabaseService' // Changed from LEGACY_FIREBASEService
 import { Order } from '@/types/index'
 import { sendNotificationToUsers } from '@/services/sendNotificationHelper'
 import { useAppStore } from '@/store/appStore'
@@ -24,7 +24,7 @@ export default function Bar() {
     audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBiuBzvLZiDYIF2W79+qbUg8OTqvn8raKOwcVa7r3GMUBAAAAAAABAAAAA')
     
     logger.info('bar', 'Component mounted')
-    const unsubscribe = supabaseService.subscribeToActiveOrders( // Changed from firebaseService
+    const unsubscribe = supabaseService.subscribeToActiveOrders( // Changed from LEGACY_FIREBASEService
       (data) => {
         const normalizedOrders = data.map(order => ({
           ...order,

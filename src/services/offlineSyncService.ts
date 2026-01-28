@@ -14,7 +14,7 @@
  */
 
 import { indexedDBService } from './indexedDBService'
-// ...firebaseService eliminado, migrado a Supabase
+// ...LEGACY_FIREBASEService eliminado, migrado a Supabase
 import logger from '@/utils/logger'
 
 interface SyncStatus {
@@ -195,7 +195,7 @@ class OfflineSyncService {
           if (collection === 'orders') {
             // ...migrado a Supabase
           } else if (collection === 'sales') {
-            // await firebaseService.deleteSale(data.id) // Firebase removido
+            // await LEGACY_FIREBASEService.deleteSale(data.id) // Firebase removido
           }
           break
       }

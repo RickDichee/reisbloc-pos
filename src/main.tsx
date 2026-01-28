@@ -45,7 +45,7 @@ if ('serviceWorker' in navigator) {
 
 // Registrar Firebase Messaging Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js').catch((error) => {
+  navigator.serviceWorker.register('/LEGACY_FIREBASE-messaging-sw.js').catch((error) => {
     console.warn('⚠️ Firebase messaging SW error:', error)
   })
 }
