@@ -29,7 +29,7 @@ export default defineConfig({
     sourcemap: true,
     target: 'esnext',
     rollupOptions: {
-      // Remove Firebase from externals and manualChunks
+
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],

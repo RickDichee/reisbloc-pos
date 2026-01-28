@@ -11,7 +11,7 @@
     "dev:production": "cross-env $(cat .env.production | grep -v '#' | xargs) vite",
     "deploy:production": "bash scripts/deploy-production.sh",
     "lint": "eslint src --ext ts,tsx",
-    "migrate:supabase": "tsx scripts/migrate-firebase-to-supabase.ts"
+
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",

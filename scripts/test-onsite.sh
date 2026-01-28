@@ -27,16 +27,8 @@ else
     exit 1
 fi
 
-# Paso 2: Verificar Firebase CLI
 echo ""
-echo -e "${YELLOW}2️⃣  Verificando Firebase CLI...${NC}"
-if command -v firebase &> /dev/null; then
-    FIREBASE_VERSION=$(firebase --version)
-    echo -e "${GREEN}✓ Firebase CLI ${FIREBASE_VERSION}${NC}"
-else
-    echo -e "${RED}✗ Firebase CLI no instalado${NC}"
-    exit 1
-fi
+
 
 # Paso 3: Verificar estructura del proyecto
 echo ""
@@ -48,7 +40,7 @@ FILES=(
     "src/pages/POS.tsx"
     "src/pages/Kitchen.tsx"
     "src/pages/Admin.tsx"
-    "firebase/firestore.rules"
+
     "functions/src/index.ts"
     ".env.local"
     "scripts/start-production.sh"
@@ -111,7 +103,7 @@ done
 if [ "$PORTS_AVAILABLE" = false ]; then
     echo ""
     echo -e "${YELLOW}Puertos en uso detectados. Opciones:${NC}"
-    echo "1. Matar procesos: pkill -f 'firebase\\|vite\\|node'"
+    echo "1. Matar procesos: pkill -f 'vite\|node'"
     echo "2. Cambiar puertos en scripts/start-production.sh"
 fi
 

@@ -16,7 +16,7 @@
 // Capa de abstracción de base de datos
 // Usa solo Supabase
 import { SUPABASE_FEATURES } from '@/config/supabase'
-// LEGACY_FIREBASEService eliminado tras migración a Supabase
+
 import supabaseService from './supabaseService'
 import logger from '@/utils/logger'
 import {
@@ -172,7 +172,7 @@ class DatabaseService {
     if (SUPABASE_FEATURES.DATABASE_ENABLED) {
       return supabaseService.subscribeToOrders(callback)
     } else {
-      // Firebase removido, solo Supabase disponible
+      // Solo Supabase disponible
       return () => {}
     }
   }
@@ -181,7 +181,7 @@ class DatabaseService {
     if (SUPABASE_FEATURES.DATABASE_ENABLED) {
       return supabaseService.subscribeToProducts(callback)
     } else {
-      // Firebase removido, solo Supabase disponible
+      // Solo Supabase disponible
       return () => {}
     }
   }

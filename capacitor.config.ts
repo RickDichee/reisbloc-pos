@@ -19,8 +19,7 @@ const config: CapacitorConfig = {
     // Permitir CORS para desarrollo local
     allowNavigation: [
       'localhost',
-      '*.firebaseapp.com',
-      '*.googleapis.com'
+        // '*.googleapis.com'
     ]
   },
   android: {

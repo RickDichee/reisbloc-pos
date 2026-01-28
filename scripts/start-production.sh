@@ -62,30 +62,7 @@ if [ -z "$LOCAL_IP" ]; then
     LOCAL_IP="localhost"
 fi
 
-# 7. Iniciar emuladores en background
-echo -e "${YELLOW}🔥 Iniciando Firebase Emulators...${NC}"
-firebase emulators:start \
-    --only auth,functions,firestore,storage \
-    --import=emulator-data \
-    --export-on-exit=emulator-data \
-    > /tmp/tpv-emulators.log 2>&1 &
-EMULATORS_PID=$!
 
-# Esperar a que emuladores estén listos
-echo -e "${YELLOW}⏳ Esperando emuladores...${NC}"
-for i in {1..30}; do
-    if curl -s http://localhost:4000 > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ Emulators ready${NC}"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo -e "${RED}❌ Timeout esperando emulators${NC}"
-        echo -e "${YELLOW}   Ver logs en: /tmp/tpv-emulators.log${NC}"
-        kill $EMULATORS_PID 2>/dev/null || true
-        exit 1
-    fi
-    sleep 1
-done
 
 # 8. Iniciar Vite preview en background
 echo -e "${YELLOW}🌐 Iniciando servidor web...${NC}"
@@ -115,8 +92,7 @@ echo ""
 echo -e "${BLUE}📱 Acceso desde tablets/móviles (misma red WiFi):${NC}"
 echo -e "   ${YELLOW}http://${LOCAL_IP}:4173${NC}"
 echo ""
-echo -e "${BLUE}🔧 Panel de administración Firebase:${NC}"
-echo -e "   ${YELLOW}http://localhost:4000${NC}"
+
 echo ""
 echo -e "${BLUE}📊 Logs en tiempo real:${NC}"
 echo -e "   Emulators: ${YELLOW}tail -f /tmp/tpv-emulators.log${NC}"

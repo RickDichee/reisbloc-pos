@@ -16,16 +16,7 @@ echo ""
 
 # 1. Verificar .env.local
 echo -e "${YELLOW}1. Verificando .env.local...${NC}"
-if grep -q "VITE_FIREBASE_VAPID_KEY" /home/r1ck/TPV_solutions/.env.local; then
-    VAPID_KEY=$(grep "VITE_FIREBASE_VAPID_KEY" /home/r1ck/TPV_solutions/.env.local | cut -d'=' -f2)
-    if [ -n "$VAPID_KEY" ]; then
-        echo -e "${GREEN}✅ VAPID Key configurada: ${VAPID_KEY:0:20}...${NC}"
-    else
-        echo -e "${RED}❌ VAPID Key vacía${NC}"
-    fi
-else
-    echo -e "${RED}❌ VAPID Key no encontrada en .env.local${NC}"
-fi
+echo -e "${YELLOW}1. Verificación de VAPID Key de Firebase eliminada (no aplica).${NC}"
 echo ""
 
 # 2. Verificar archivos de Service Worker
@@ -36,11 +27,7 @@ else
     echo -e "${RED}❌ sw.js no existe${NC}"
 fi
 
-if [ -f "/home/r1ck/TPV_solutions/public/firebase-messaging-sw.js" ]; then
-    echo -e "${GREEN}✅ firebase-messaging-sw.js existe${NC}"
-else
-    echo -e "${RED}❌ firebase-messaging-sw.js no existe${NC}"
-fi
+
 
 if [ -f "/home/r1ck/TPV_solutions/public/manifest.json" ]; then
     echo -e "${GREEN}✅ manifest.json existe${NC}"
@@ -129,7 +116,7 @@ echo "3. La orden se guarda en IndexedDB"
 echo "4. Ve el OfflineIndicator en esquina inferior izquierda"
 echo "5. Desactiva Offline"
 echo "6. OfflineIndicator mostrará sincronización automática"
-echo "7. Orden se envía a Firebase"
+echo "7. Orden se envía al backend"
 echo ""
 
 echo -e "${YELLOW}Test 3: PWA - Instalar App${NC}"
@@ -145,7 +132,7 @@ echo -e "${GREEN}================================================${NC}"
 echo ""
 echo "Próximos pasos:"
 echo "1. Si no está corriendo: npm run dev"
-echo "2. Si no están emuladores: firebase emulators:start"
+echo "2. Si no están emuladores: inicia tu backend local o Supabase si aplica"
 echo "3. Realiza los tests anteriores"
 echo "4. Verifica logs en DevTools Console (F12)"
 echo ""

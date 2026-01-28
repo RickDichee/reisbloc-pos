@@ -10,7 +10,7 @@
 
 // Servicio de autenticación solo Supabase
 import { supabase, supabaseAdmin } from '@/config/supabase'
-// Firebase eliminado tras migración a Supabase
+
 import logger from '@/utils/logger'
 import { User } from '@/types/index'
 

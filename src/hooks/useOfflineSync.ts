@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import offlineDBService from '../services/offlineDBService'
-// import LEGACY_FIREBASEService from '../services/LEGACY_FIREBASEService'
+
 import logger from '@/utils/logger'
 
 export interface OfflineSyncState {
@@ -87,7 +87,7 @@ export function useOfflineSync() {
       const pendingOrders = await offlineDBService.getPendingOrders()
       for (const order of pendingOrders) {
         try {
-          // Enviar orden a Supabase (Firebase removido)
+          // Enviar orden a Supabase
           // TODO: Implementar con supabaseService si es necesario
         } catch (error) {
           logger.error('offline-sync', 'Error syncing order', error as any)
@@ -98,7 +98,7 @@ export function useOfflineSync() {
       const pendingSales = await offlineDBService.getPendingSales()
       for (const sale of pendingSales) {
         try {
-          // Enviar venta a Supabase (Firebase removido)
+          // Enviar venta a Supabase
           // TODO: Implementar con supabaseService si es necesario
         } catch (error) {
           logger.error('offline-sync', 'Error syncing sale', error as any)

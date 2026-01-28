@@ -110,7 +110,7 @@ if [ $FAIL -eq 0 ]; then
     echo -e "${GREEN}✨ Todo listo para empezar!${NC}"
     echo ""
     echo "Próximos pasos:"
-    echo "1. (Firebase project creation step removed)"
+    echo "1. (Firebase project step eliminado completamente)"
     echo "2. (Credentials copying step removed)"
     echo "3. (Firestore Database creation step removed)"
     echo "4. Ejecutar: npm install"

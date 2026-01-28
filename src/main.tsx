@@ -43,12 +43,7 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-// Registrar Firebase Messaging Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/LEGACY_FIREBASE-messaging-sw.js').catch((error) => {
-    console.warn('⚠️ Firebase messaging SW error:', error)
-  })
-}
+
 
 import ErrorBoundary from './components/common/ErrorBoundary'
 

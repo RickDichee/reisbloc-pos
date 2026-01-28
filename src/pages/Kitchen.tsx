@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import logger from '@/utils/logger'
 import { ChefHat, Clock, CheckCircle2, AlertCircle, Bell, Eye } from 'lucide-react'
-import supabaseService from '@/services/supabaseService' // Changed from LEGACY_FIREBASEService
+import supabaseService from '@/services/supabaseService'
 import { Order } from '@/types/index'
 import EditOrderModal from '@/components/admin/EditOrderModal'
 import { useAppStore } from '@/store/appStore'
@@ -27,7 +27,7 @@ export default function Kitchen() {
     audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBiuBzvLZiDYIF2W79+qbUg8OTqvn8raKOwcVa7r3GMUBAAAAAAABAAAAA')
     
     logger.info('kitchen', 'Component mounted')
-    const unsubscribe = supabaseService.subscribeToActiveOrders( // Changed from LEGACY_FIREBASEService
+    const unsubscribe = supabaseService.subscribeToActiveOrders(
       (data) => {
         const normalizedOrders = data.map(order => ({
           ...order,

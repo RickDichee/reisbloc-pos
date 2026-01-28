@@ -93,7 +93,12 @@ scripts/
 **El script:**
 1. ✅ Build app
 2. ✅ Backup automático
-3. ✅ Inicia emuladores Firebase
+3. ✅ Inicia emuladores /home/r1ck/reisbloc-pos/.github/workflows/ci.yml
+  1,13: name: Clean Firebase and Build
+  21,26:       - name: Make clean-firebase.sh executable
+  22,37:         run: chmod +x scripts/clean-firebase.sh
+  24,25:       - name: Run clean-firebase.sh
+  25,30:         run: ./scripts/clean-firebase.sh
 4. ✅ Inicia web server (puerto 4173)
 5. ✅ Muestra IP local
 6. ✅ Monitorea sistema

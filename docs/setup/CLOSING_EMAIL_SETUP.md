@@ -208,11 +208,7 @@ Los correos se guardan en Firestore en la colección `emailLogs`:
 }
 ```
 
-**Consulta en Firebase Console:**
-```
-Collection: emailLogs
-Filters: type == "closing"
-```
+
 
 ## Troubleshooting
 

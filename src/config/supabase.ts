@@ -18,7 +18,7 @@ const supabaseAnonKey = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 // Verificar que las variables estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase not configured. Using Firebase fallback.')
+  console.warn('⚠️ Supabase no configurado. Revisa tus variables de entorno.')
 }
 
 // Create Supabase client
