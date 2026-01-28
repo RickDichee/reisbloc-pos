@@ -14,7 +14,7 @@
 **Etapa:** Migración avanzada a Supabase, optimización PWA y notificaciones push en producción.
 
 **Logros recientes:**
-- Migración completa de datos y lógica de Firebase a Supabase
+- Consolidación de lógica de negocio y persistencia en Supabase (PostgreSQL)
 - Implementación de notificaciones push con sonido y vibración
 - Optimización de la interfaz móvil y experiencia offline-first
 - Integración robusta con MercadoPago y gestión transparente de propinas

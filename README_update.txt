@@ -49,10 +49,6 @@ Secciones a agregar después de "Stack Tecnológico":
 - **React Router v6** - Navegación moderna
 
 ### Backend ✅
-- **Firebase Firestore** - Base de datos NoSQL
-- **Firebase Functions** - Cloud functions serverless
-- **Firebase Authentication** - Autenticación segura
-- **Firebase Storage** - Almacenamiento de archivos
 
 ### Pagos ✅
 - **MercadoPago API** - Procesamiento de pagos

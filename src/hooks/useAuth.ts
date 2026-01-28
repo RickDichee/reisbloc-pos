@@ -43,14 +43,8 @@ export function useAuth() {
       // Buscar usuario por PIN en Supabase
       const users = await supabaseService.getAllUsers()
       
-      console.log('🔎 [DEBUG] Usuarios obtenidos:', users.length)
-      console.log('🔎 [DEBUG] PIN ingresado:', pin)
-      console.log('🔎 [DEBUG] PINs en BD:', users.map(u => ({ name: u.name, pin: u.pin, active: (u as any).active })))
-      
       // Buscar usuario con PIN coincidente
       const user = users.find(u => u.pin === pin)
-      
-      console.log('🔎 [DEBUG] Usuario encontrado:', user ? user.name : 'NINGUNO')
 
       if (!user) {
         setError('PIN incorrecto')
@@ -66,12 +60,8 @@ export function useAuth() {
       
       // Buscar dispositivo por MAC address (no por userId, porque puede no estar asignado)
       const allDevices = await supabaseService.getAllDevices()
-      console.log('🔎 [DEBUG] Devices totales:', allDevices.length)
-      console.log('🔎 [DEBUG] MAC del navegador:', deviceInfo.macAddress)
-      console.log('🔎 [DEBUG] MACs en BD:', allDevices.map(d => d.macAddress))
       
       let device: Device | null = allDevices.find(d => d.macAddress === deviceInfo.macAddress) || null
-      console.log('🔎 [DEBUG] Device encontrado:', device ? device.id : 'NINGUNO')
 
       if (!device) {
         // Registrar nuevo dispositivo
@@ -100,7 +90,7 @@ export function useAuth() {
             device.isApproved = true
             device.isRejected = false
           } catch (e) {
-            console.warn('No se pudo auto-aprobar dispositivo (admin):', e)
+            logger.warn('auth', 'No se pudo auto-aprobar dispositivo admin', e as any)
           }
         }
       } else {
@@ -124,7 +114,7 @@ export function useAuth() {
             device.isApproved = true
             device.isRejected = false
           } catch (e) {
-            console.warn('No se pudo auto-aprobar dispositivo existente (admin):', e)
+            logger.warn('auth', 'No se pudo auto-aprobar dispositivo admin', e as any)
           }
         }
 
@@ -183,9 +173,6 @@ export function useAuth() {
         supabaseService.getAllProducts(),
         supabaseService.getAllUsers(),
       ])
-      
-      console.log('🔎 [DEBUG] Productos cargados:', products.length)
-      console.log('🔎 [DEBUG] Usuarios cargados:', usersList.length)
 
       setCurrentUser(user)
       setCurrentDevice(device)

@@ -4,7 +4,7 @@
 
 Reisbloc POS es una aplicación de Punto de Venta moderna basada en:
 - **Frontend**: React 18 + TypeScript
-- **Backend**: Firebase (Firestore + Cloud Functions)
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
 - **Estado Global**: Zustand
 - **UI**: Tailwind CSS + Lucide Icons
 
@@ -30,18 +30,18 @@ Reisbloc POS es una aplicación de Punto de Venta moderna basada en:
 └─────────────────────────────────────────────────────────┘
                ↓                    ↓
     ┌──────────────────┐  ┌──────────────────┐
-    │  Firebase Auth   │  │   Firestore DB   │
+    │  Supabase Auth   │  │   PostgreSQL DB  │
     └──────────────────┘  └──────────────────┘
                ↓                    ↓
     ┌──────────────────────────────────────┐
-    │  Firebase Backend & Security Rules   │
+    │  Supabase Edge Functions & RLS       │
     └──────────────────────────────────────┘
 ```
 
 ## 📁 Estructura de Carpetas Detallada
 
 ```
-tpv-solutions/
+reisbloc-pos/
 ├── src/
 │   ├── components/
 │   │   ├── auth/
@@ -94,13 +94,12 @@ tpv-solutions/
 │   │   ├── clipService.ts              # Integración Clip
 │   │   ├── auditService.ts             # Registro de auditoría
 │   │   ├── closingService.ts           # Cálculo de cierre
-│   │   └── firebaseService.ts          # (A implementar) Operaciones Firebase
+│   │   └── supabaseService.ts          # Operaciones Supabase
 │   │
 │   ├── hooks/
 │   │   ├── useAuth.ts                  # Hook de autenticación
 │   │   ├── useDevice.ts                # Hook de dispositivo
 │   │   ├── usePOS.ts                   # Hook de POS
-│   │   └── useFirestore.ts             # Hook de Firestore
 │   │
 │   ├── store/
 │   │   └── appStore.ts                 # Store global Zustand
@@ -109,7 +108,7 @@ tpv-solutions/
 │   │   └── index.ts                    # TypeScript definitions
 │   │
 │   ├── config/
-│   │   ├── firebase.ts                 # Configuración Firebase
+│   │   ├── supabase.ts                 # Configuración Supabase
 │   │   └── constants.ts                # Constantes
 │   │
 │   ├── utils/
@@ -124,15 +123,10 @@ tpv-solutions/
 │   ├── App.tsx
 │   └── main.tsx
 │
-├── firebase/
-│   ├── functions/
-│   │   ├── index.ts                    # Cloud Functions
-│   │   ├── auth.ts                     # Funciones de autenticación
-│   │   ├── payments.ts                 # Funciones de pagos
-│   │   └── reports.ts                  # Funciones de reportes
-│   │
-│   ├── firestore.rules                 # Reglas de seguridad
-│   └── storage.rules
+├── supabase/
+│   ├── functions/                      # Edge Functions
+│   ├── migrations/                     # SQL Migrations
+│   └── config.toml
 │
 ├── .env.local                          # Variables de entorno
 ├── vite.config.ts
@@ -151,7 +145,7 @@ tpv-solutions/
 2. Obtener información del dispositivo
 3. Mostrar pantalla de login
 4. Usuario ingresa PIN
-5. Validar PIN en Firebase
+5. Validar PIN en Supabase (Edge Function)
 6. Obtener/registrar dispositivo
 7. Si dispositivo no aprobado → mostrar "Pendiente"
 8. Si aprobado → ir a POS
@@ -169,7 +163,7 @@ tpv-solutions/
 7. Mesero entrega
 8. Cliente paga
 9. Procesar pago (cash/digital/clip)
-10. Actualizar inventario
+10. Actualizar inventario (PostgreSQL Trigger)
 11. Registrar venta
 12. Imprimir ticket
 ```
@@ -203,12 +197,12 @@ tpv-solutions/
 6. Cambios se registran en auditoría
 ```
 
-## 🗄️ Estructura de Base de Datos Firestore
+## 🗄️ Estructura de Base de Datos (PostgreSQL)
 
-### Colecciones Principales
+### Tablas Principales
 
 ```
-firestore/
+public/
 ├── users/
 │   ├── user_1
 │   │   ├── username: string
@@ -299,64 +293,24 @@ firestore/
         └── ...
 ```
 
-## 🔐 Reglas de Seguridad Firebase
+## 🔐 Seguridad (RLS Policies)
 
 ```typescript
-// firestore.rules
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // Solo usuarios autenticados
-    match /users/{userId} {
-      allow read: if request.auth.uid == userId || 
-                    isAdmin(request.auth.uid);
-      allow write: if isAdmin(request.auth.uid);
-    }
+// Ejemplo de RLS para ventas
+CREATE POLICY "Vendedores pueden ver sus propias ventas"
+  ON sales FOR SELECT
+  USING (auth.uid() = sale_by);
 
-    // Dispositivos - leer los propios
-    match /devices/{deviceId} {
-      allow read: if isDeviceOwner(deviceId) || 
-                    isAdmin(request.auth.uid);
-      allow write: if isAdmin(request.auth.uid);
-    }
+-- Políticas de RLS en PostgreSQL
+CREATE POLICY "Admins tienen acceso total"
+  ON public.users
+  FOR ALL
+  USING ( auth.jwt() ->> 'role' = 'admin' );
 
-    // Ventas - leer propias o admin
-    match /sales/{saleId} {
-      allow read: if isSaleCreator(saleId) || 
-                    isAdmin(request.auth.uid) ||
-                    isSupervisor(request.auth.uid);
-      allow create: if canCreateSale(request.auth.uid);
-      allow write: if isAdmin(request.auth.uid);
-    }
-
-    // Cierre de caja - solo admin y supervisor
-    match /daily_closes/{closeId} {
-      allow read: if isAdmin(request.auth.uid) ||
-                    isSupervisor(request.auth.uid);
-      allow write: if isAdmin(request.auth.uid);
-    }
-
-    // Auditoría - solo admin
-    match /audit_logs/{auditId} {
-      allow read: if isAdmin(request.auth.uid);
-      allow write: if isAdmin(request.auth.uid);
-    }
-  }
-
-  // Helper functions
-  function isAdmin(userId) {
-    return getUserRole(userId) == 'admin';
-  }
-
-  function isSupervisor(userId) {
-    return getUserRole(userId) == 'supervisor';
-  }
-
-  function getUserRole(userId) {
-    return get(/databases/$(database)/documents/users/$(userId)).data.role;
-  }
-}
+CREATE POLICY "Usuarios pueden ver su propio perfil"
+  ON public.users
+  FOR SELECT
+  USING ( auth.uid() = id );
 ```
 
 ## 🚀 Flujo de Datos
@@ -368,9 +322,9 @@ User Action
     ↓
 Component → Store Update
     ↓
-Firebase Update
+Supabase Update (PostgreSQL)
     ↓
-Firestore Listener
+Realtime Listener (Supabase)
     ↓
 Store Update
     ↓
@@ -423,10 +377,10 @@ GitHub Actions
     ├─ Lint Code
     └─ Build
     ↓
-Deploy a Firebase
-    ├─ Frontend (Hosting)
-    ├─ Backend (Cloud Functions)
-    └─ Database (Firestore)
+Deploy a Producción
+    ├─ Frontend (Vercel/Netlify)
+    ├─ Edge Functions (Supabase)
+    └─ Database (PostgreSQL)
 ```
 
 ---

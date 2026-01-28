@@ -44,7 +44,7 @@ export const LoginPin: React.FC = () => {
    * Maneja el envío del formulario
    * - Valida que el PIN tenga 4-6 dígitos
    * - Detecta información del dispositivo
-   * - Llama a Cloud Function para validar PIN
+   * - Llama al servicio de autenticación para validar PIN
    * - Redirige a POS o muestra error
    */
   const handleSubmit = async (e: React.FormEvent) => {

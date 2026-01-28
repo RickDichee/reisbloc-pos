@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { AuditLog } from '@/types/index'
+import supabaseService from '@/services/supabaseService'
 import logger from '@/utils/logger'
 import { 
   FileText, 
@@ -33,62 +34,8 @@ export default function AuditLogsPanel() {
   const loadLogs = async () => {
     setLoading(true)
     try {
-      // TODO: Implementar LEGACY_FIREBASEService.getAuditLogs()
-      // Por ahora, logs de ejemplo
-      const mockLogs: AuditLog[] = [
-        {
-          id: '1',
-          userId: 'admin-001',
-          action: 'LOGIN_SUCCESS',
-          entityType: 'AUTH',
-          entityId: 'device-123',
-          timestamp: new Date(),
-          deviceId: 'device-123',
-        },
-        {
-          id: '2',
-          userId: 'admin-001',
-          action: 'PRODUCT_CREATED',
-          entityType: 'PRODUCT',
-          entityId: 'prod-456',
-          newValue: { name: 'Tacos al Pastor', price: 85 },
-          timestamp: new Date(Date.now() - 3600000),
-          deviceId: 'device-123',
-        },
-        {
-          id: '3',
-          userId: 'supervisor-001',
-          action: 'VIEW_REPORT',
-          entityType: 'REPORT',
-          entityId: 'sales-report',
-          timestamp: new Date(Date.now() - 7200000),
-          deviceId: 'device-456',
-        },
-        {
-          id: '4',
-          userId: 'admin-001',
-          action: 'INVENTORY_CHANGE',
-          entityType: 'PRODUCT',
-          entityId: 'prod-789',
-          oldValue: { quantity: 100 },
-          newValue: { quantity: 95 },
-          timestamp: new Date(Date.now() - 10800000),
-          deviceId: 'device-123',
-        },
-        {
-          id: '5',
-          userId: 'admin-001',
-          action: 'USER_MODIFIED',
-          entityType: 'USER',
-          entityId: 'user-321',
-          oldValue: { role: 'capitan' },
-          newValue: { role: 'supervisor' },
-          timestamp: new Date(Date.now() - 14400000),
-          deviceId: 'device-123',
-        },
-      ]
-      
-      setLogs(mockLogs)
+      const data = await supabaseService.getAuditLogs()
+      setLogs(data || [])
     } catch (error) {
       logger.error('audit-panel', 'Error loading logs', error as any)
     } finally {

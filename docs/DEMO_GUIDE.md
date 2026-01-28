@@ -53,19 +53,16 @@ Prepara → Marca lista → Mesero sirve → Cobra
 
 ### ❌ Credenciales y Configuración
 - **NUNCA** abrir `.env.local`
-- **NUNCA** mostrar `firebase-admin-credentials.json`
 - **NUNCA** enseñar claves API de MercadoPago
-- **NUNCA** compartir URLs de Firebase Console
 
 ### ❌ Base de Datos
-- No mostrar Firebase Console
-- No enseñar estructura de Firestore
-- No abrir Emulator UI durante demo
+- No mostrar el Dashboard de Supabase
+- No enseñar estructura de tablas SQL
 
 ### ❌ Archivos Sensibles
 ```
 ❌ .env.local
-❌ firebase-admin-credentials.json
+❌ supabase-service-role-key (si existiera)
 ❌ .firebaserc
 ❌ package-lock.json
 ❌ node_modules/
@@ -79,7 +76,7 @@ Prepara → Marca lista → Mesero sirve → Cobra
 
 ### Preparación (30 minutos antes)
 - [ ] Cerrar todos los editores de código
-- [ ] Cerrar Firebase Console
+- [ ] Cerrar Supabase Dashboard
 - [ ] Limpiar historial de terminal
 - [ ] Verificar que `.env.local` no esté abierto
 - [ ] Crear usuarios demo con PINs simples (1111, 2222, etc.)
@@ -89,7 +86,7 @@ Prepara → Marca lista → Mesero sirve → Cobra
 ### Setup de Demo
 ```bash
 # 1. Ir a la carpeta del proyecto
-cd ~/TPV_solutions
+cd ~/reisbloc-pos
 
 # 2. Iniciar sistema
 ./scripts/start-production.sh
@@ -181,7 +178,7 @@ de diferentes roles."
 clear
 
 # 2. Hacer terminal más legible
-export PS1="\[\033[01;32m\]TPV Demo\[\033[00m\]$ "
+export PS1="\[\033[01;32m\]Reisbloc Demo\[\033[00m\]$ "
 
 # 3. Iniciar sistema
 ./scripts/start-production.sh
@@ -332,7 +329,7 @@ sus credenciales propias."
 
 **NO enviar**:
 - Acceso al repositorio
-- Links a Firebase
+- Links a Supabase Dashboard
 - Credenciales de prueba
 - Código fuente
 

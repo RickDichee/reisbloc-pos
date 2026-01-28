@@ -35,7 +35,6 @@ export function listenToForegroundMessages(_callback: (payload: any) => void) {
 
 /**
  * Crear notificación in-app en Firestore
- * @deprecated Firebase disabled - needs Supabase migration
  */
 export async function createNotification(
   userId: string,
@@ -67,7 +66,6 @@ export async function createNotification(
 
 /**
  * Crear notificaciones para múltiples usuarios (por rol)
- * @deprecated Firebase disabled
  */
 export async function notifyUsersByRole(
   role: UserRole | UserRole[],
@@ -107,7 +105,6 @@ export async function notifyUsersByRole(
 
 /**
  * Escuchar notificaciones del usuario en tiempo real
- * @deprecated Firebase disabled - needs Supabase migration
  */
 export function subscribeToNotifications(
   userId: string,
@@ -169,7 +166,6 @@ export function subscribeToNotifications(
 
 /**
  * Marcar notificación como leída
- * @deprecated Firebase disabled
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
@@ -178,7 +174,6 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 
 /**
  * Marcar todas las notificaciones del usuario como leídas
- * @deprecated Firebase disabled
  */
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
   if (!NOTIFICATIONS_ENABLED) return
