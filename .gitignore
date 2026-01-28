@@ -1,3 +1,6 @@
+# Variables de entorno
+.env*
+*.env.local
 # Ignorar archivos de entorno de producción y desarrollo
 .env*
 # Dependencies

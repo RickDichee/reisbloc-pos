@@ -65,9 +65,9 @@ echo -e "${GREEN}✅ Build successful${NC}\n"
 
 # Step 4: Deploy Edge Function
 echo -e "${YELLOW}🚀 Deploying Edge Function to production...${NC}"
+PROJECT_REF=$(echo $VITE_SUPABASE_URL | sed -E 's#https://([a-z0-9]+)\.supabase\.co#\1#')
 npx supabase functions deploy generate-access-token \
-    --project-id "$(echo $VITE_SUPABASE_URL | sed 's/https:\/\/\(.*\)\.supabase\.co/\1/')" \
-    --no-verify
+  --project-ref "$PROJECT_REF"
 echo -e "${GREEN}✅ Edge Function deployed${NC}\n"
 
 # Step 5: Apply production RLS policies
