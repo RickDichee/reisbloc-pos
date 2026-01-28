@@ -1,6 +1,5 @@
 # Ignorar archivos de entorno de producción y desarrollo
-.env.production
-.env.local
+.env*
 # Dependencies
 node_modules/
 
@@ -14,12 +13,21 @@ dist/
 # Producción
 .env.production
 
-# Firebase
-.firebase/
+# Firebase (legacy, removido)
+firebase/
+firebase-*/
 firebase-debug.log
 firestore-debug.log
 firebase-export-*/
 ui-debug.log
+src/config/firebase.ts
+src/services/firebaseService.ts
+public/firebase-messaging-sw.js
+public/sw.js
+docs/setup/FIRESTORE_SETUP.md
+scripts/reset-users-clean.js
+scripts/migrate-firebase-to-supabase.ts
+functions/src/index.ts
 
 # Backups and data
 backups/
@@ -43,6 +51,7 @@ yarn-error.log*
 
 # Credentials (keep template)
 firebase-admin-credentials.json
+.env*
 
 # Android / Capacitor
 android/app/build/
@@ -61,3 +70,5 @@ android/local.properties
 .idea/
 *.iml
 
+.vercel
+.env*.local

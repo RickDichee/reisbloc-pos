@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { AlertCircle, CheckCircle, Clock, Smartphone } from 'lucide-react'
-import { httpsCallable } from 'firebase/functions'
 import { useAppStore } from '../../store/appStore'
 import { Device } from '../../types'
-import { functions } from '@/config/firebase'
+import supabaseService from '@/services/supabaseService'
 
 /**
  * DeviceVerification Component
@@ -31,20 +30,19 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
   const [retryCount, setRetryCount] = useState(0)
   const [timeElapsed, setTimeElapsed] = useState(0)
 
+  // Poll Supabase for device approval status
   const validateDevice = useCallback(async () => {
     if (!currentDevice?.id || !currentUser?.id) {
       return 'missing'
     }
 
     try {
-      const validateFn = httpsCallable(functions, 'validateDevice')
-      const res = await validateFn({ deviceId: currentDevice.id, userId: currentUser.id })
-      const data: any = res.data
-
-      if (data?.success && data.device) {
+      // Get device by ID from Supabase
+      const device = await supabaseService.getDeviceById(currentDevice.id)
+      if (device && device.isApproved) {
         const updated: Device = {
           ...currentDevice,
-          ...data.device,
+          ...device,
           isApproved: true,
           isRejected: false,
         }
@@ -53,16 +51,10 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
         onDeviceApproved?.()
         return 'approved'
       }
-
       setStatus('pending')
       return 'pending'
     } catch (err: any) {
       console.error('validateDevice error:', err)
-      const code = err?.code || ''
-      if (code === 'permission-denied') {
-        setStatus('pending')
-        return 'pending'
-      }
       setStatus('error')
       return 'error'
     }
