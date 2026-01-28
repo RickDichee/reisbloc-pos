@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle, Clock, Smartphone } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { Device } from '../../types'
 import supabaseService from '@/services/supabaseService'
+import { subscribeUserToPush } from '@/services/pushService'
 
 /**
  * DeviceVerification Component
@@ -83,6 +84,21 @@ export const DeviceVerification: React.FC<DeviceVerificationProps> = ({
 
     return () => clearInterval(interval)
   }, [autoRetry, retryInterval, validateDevice])
+
+  // Llama a esta función después de login exitoso o cuando el usuario lo permita
+  async function enablePushNotifications(userId: string) {
+    const permission = await Notification.requestPermission()
+    if (permission === 'granted') {
+      const ok = await subscribeUserToPush(userId)
+      if (ok) {
+        alert('Notificaciones push activadas')
+      } else {
+        alert('No se pudo activar push (ver consola)')
+      }
+    } else {
+      alert('Permiso de notificaciones denegado')
+    }
+  }
 
   if (status === 'approved') {
     return (
