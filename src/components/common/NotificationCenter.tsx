@@ -156,7 +156,7 @@ export default function NotificationCenter({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm font-bold ${!notification.read ? 'text-white' : 'text-gray-400'}`}>
+                            <p className={`text-sm font-bold truncate ${!notification.read ? 'text-white' : 'text-gray-400'}`}>
                               {notification.title}
                             </p>
                             {!notification.read && (
@@ -167,7 +167,7 @@ export default function NotificationCenter({
                             {notification.body}
                           </p>
                           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-3 font-semibold">
-                            {formatDistanceToNow(new Date(notification.createdAt || (notification as any).created_at), {
+                            {formatDistanceToNow(new Date(notification.createdAt || (notification as any).created_at || Date.now()), {
                               addSuffix: true,
                               locale: es
                             })}
