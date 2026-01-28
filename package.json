@@ -11,9 +11,6 @@
     "dev:production": "cross-env $(cat .env.production | grep -v '#' | xargs) vite",
     "deploy:production": "bash scripts/deploy-production.sh",
     "lint": "eslint src --ext ts,tsx",
-    "deploy": "firebase deploy",
-    "firebase:login": "firebase login",
-    "firebase:init": "firebase init",
     "migrate:supabase": "tsx scripts/migrate-firebase-to-supabase.ts"
   },
   "dependencies": {
@@ -28,8 +25,6 @@
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.4.1",
     "date-fns": "^2.30.0",
-    "firebase": "^10.7.0",
-    "firebase-admin": "^13.6.0",
     "lucide-react": "^0.294.0",
     "mercadopago": "^2.12.0",
     "react": "^18.2.0",
@@ -50,7 +45,6 @@
     "autoprefixer": "^10.4.23",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
-    "firebase-tools": "^15.4.0",
     "supabase": "^2.72.8",
     "typescript": "^5.3.3",
     "vite": "^7.3.1"
