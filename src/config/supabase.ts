@@ -67,9 +67,9 @@ export async function setAuthToken(token: string | null) {
 
 // Feature flags para migración gradual
 export const SUPABASE_FEATURES = {
-  AUTH_ENABLED: import.meta.env.VITE_SUPABASE_AUTH_ENABLED === 'true',
-  DATABASE_ENABLED: import.meta.env.VITE_SUPABASE_DB_ENABLED === 'true',
-  STORAGE_ENABLED: import.meta.env.VITE_SUPABASE_STORAGE_ENABLED === 'true'
+  AUTH_ENABLED: import.meta.env.NEXT_PUBLIC_SUPABASE_AUTH_ENABLED === 'true',
+  DATABASE_ENABLED: import.meta.env.NEXT_PUBLIC_SUPABASE_DB_ENABLED === 'true',
+  STORAGE_ENABLED: import.meta.env.NEXT_PUBLIC_SUPABASE_STORAGE_ENABLED === 'true'
 }
 
 // Helper para verificar si Supabase está disponible
