@@ -1,6 +1,0 @@
-{
-  "projects": {
-    "default": "reisbloc-pos"
-  },
-  "_comment": "Este archivo es legado de Firebase. El proyecto actual usa Supabase y branding reisbloc-pos."
-}

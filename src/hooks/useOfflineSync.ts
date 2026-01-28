@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import offlineDBService from '../services/offlineDBService'
-// import firebaseService from '../services/firebaseService'
+// import LEGACY_FIREBASEService from '../services/LEGACY_FIREBASEService'
 import logger from '@/utils/logger'
 
 export interface OfflineSyncState {

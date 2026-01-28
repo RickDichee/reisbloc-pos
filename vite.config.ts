@@ -29,18 +29,10 @@ export default defineConfig({
     sourcemap: true,
     target: 'esnext',
     rollupOptions: {
-      external: ['firebase-functions', 'firebase-admin'],
+      // Remove Firebase from externals and manualChunks
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          firebase: [
-            'firebase/app',
-            'firebase/auth',
-            'firebase/firestore',
-            'firebase/functions',
-            'firebase/storage',
-            'firebase/analytics',
-          ],
         },
       },
     },

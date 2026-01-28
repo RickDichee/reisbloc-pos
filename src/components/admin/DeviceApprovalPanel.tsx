@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Loader, AlertCircle, Smartphone } from 'lucide-react';
-import supabaseService from '../../services/supabaseService'; // Changed from firebaseService
+import supabaseService from '../../services/supabaseService'; // Changed from LEGACY_FIREBASEService
 import { Device } from '../../types';
 
 /**
@@ -33,7 +33,7 @@ export const DeviceApprovalPanel: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const allDevices = await supabaseService.getAllDevices(); // Changed from firebaseService
+      const allDevices = await supabaseService.getAllDevices(); // Changed from LEGACY_FIREBASEService
       console.log('Dispositivos cargados:', allDevices);
       setDevices(allDevices);
     } catch (err) {
@@ -51,7 +51,7 @@ export const DeviceApprovalPanel: React.FC = () => {
   const approveDevice = async (deviceId: string) => {
     setProcessingId(deviceId);
     try {
-      await supabaseService.approveDevice(deviceId); // Changed from firebaseService
+      await supabaseService.approveDevice(deviceId); // Changed from LEGACY_FIREBASEService
       
       // Actualizar estado local
       setDevices(devices.map(d => 
@@ -79,7 +79,7 @@ export const DeviceApprovalPanel: React.FC = () => {
 
     setProcessingId(deviceId);
     try {
-      await supabaseService.revokeDevice(deviceId); // Changed from firebaseService
+      await supabaseService.revokeDevice(deviceId); // Changed from LEGACY_FIREBASEService
 
       // Actualizar estado local
       setDevices(devices.map(d => 
