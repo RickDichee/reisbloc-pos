@@ -13,7 +13,7 @@
  * GNU Affero General Public License for more details.
  */
 
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState, useMemo } from 'react'
 import logger from '@/utils/logger'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
@@ -22,7 +22,7 @@ import NavBar from '@/components/layout/NavBar'
 import OfflineIndicator from '@/components/common/OfflineIndicator'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { useNotifications } from '@/hooks/useNotifications'
-import { Bell } from 'lucide-react'
+import { Bell, Share, PlusSquare } from 'lucide-react'
 
 const Login = lazy(() => import('@/pages/Login'))
 const POS = lazy(() => import('@/pages/POS'))
@@ -40,6 +40,13 @@ function App() {
   const { isAuthenticated, currentUser } = useAppStore()
   const { currentDevice } = useAppStore.getState()
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false)
+  const [showIOSPrompt, setShowIOSPrompt] = useState(false)
+
+  // Detectar si es iOS y si NO está en modo standalone (instalada)
+  const isIOS = useMemo(() => /iPad|iPhone|iPod/.test(navigator.userAgent), [])
+  const isStandalone = useMemo(() => 
+    window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+  , [])
 
   // Hook de notificaciones (solo para prompt de permisos)
   const { permission, requestPermission } = useNotifications(currentUser?.id || null)
@@ -56,6 +63,14 @@ function App() {
         setShowPermissionPrompt(true)
       }, 3000)
       
+      return () => clearTimeout(timer)
+    }
+
+    // Mostrar prompt de instalación iOS si aplica
+    if (isAuthenticated && isIOS && !isStandalone) {
+      const timer = setTimeout(() => {
+        setShowIOSPrompt(true)
+      }, 6000)
       return () => clearTimeout(timer)
     }
   }, [isAuthenticated, permission, showPermissionPrompt])
@@ -81,31 +96,51 @@ function App() {
 
         {/* Prompt para solicitar permiso de notificaciones */}
         {showPermissionPrompt && permission === 'default' && (
-          <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm z-50">
-            <div className="flex items-start gap-3">
-              <Bell className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="fixed bottom-6 right-4 left-4 sm:left-auto bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 max-w-sm z-50 animate-slide-in ring-1 ring-black/5">
+            <div className="flex items-start gap-4">
+              <div className="bg-blue-500/20 p-2 rounded-xl">
+                <Bell className="w-6 h-6 text-blue-400 flex-shrink-0" />
+              </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-bold text-white mb-1">
                   Activar notificaciones
                 </h4>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-gray-300 mb-4 leading-relaxed">
                   Recibe alertas de nuevas órdenes, platillos listos e inventario bajo.
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleAcceptNotifications}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20"
                   >
                     Activar
                   </button>
                   <button
                     onClick={() => setShowPermissionPrompt(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                    className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl text-sm font-bold transition-all border border-white/10"
                   >
                     Ahora no
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Guía de Instalación iOS */}
+        {showIOSPrompt && (
+          <div className="fixed bottom-20 right-4 left-4 bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 z-[60] animate-bounce-subtle border border-white/20">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Share className="w-5 h-5" />
+              </div>
+              <div className="flex-1 text-xs">
+                <p className="font-bold">¡Úsala como App!</p>
+                <p>Toca <Share className="inline w-3 h-3" /> y luego <PlusSquare className="inline w-3 h-3" /> "Añadir a inicio" para pantalla completa.</p>
+              </div>
+              <button onClick={() => setShowIOSPrompt(false)} className="text-white/60 hover:text-white">
+                <Bell className="w-4 h-4 rotate-45" />
+              </button>
             </div>
           </div>
         )}

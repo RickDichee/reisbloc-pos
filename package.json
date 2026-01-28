@@ -1,6 +1,6 @@
 {
-  "name": "tpv-solutions",
-  "version": "2.0.0",
+  "name": "reisbloc-pos",
+  "version": "3.0.0",
   "description": "POS Restaurante profesional con MercadoPago, UI moderna y control de inventario avanzado",
   "type": "module",
   "scripts": {

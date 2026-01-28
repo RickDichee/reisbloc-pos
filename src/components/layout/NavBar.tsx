@@ -1,10 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationCenter from '@/components/common/NotificationCenter'
-import { useState } from 'react'
 import {
   ShoppingCart,
   ChefHat,
@@ -17,7 +17,8 @@ import {
   Eye,
   DollarSign,
   Utensils,
-  Bell
+  Maximize,
+  Minimize
 } from 'lucide-react'
 
 export default function NavBar() {
@@ -25,21 +26,43 @@ export default function NavBar() {
   const { currentUser } = useAppStore()
   const { logout } = useAuth()
   const { isReadOnly, currentRole } = usePermissions()
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [supportsFullscreen, setSupportsFullscreen] = useState(true)
   
   const {
     notifications,
     unreadCount,
-    permission,
-    requestPermission,
     markAsRead,
     markAllAsRead
   } = useNotifications(currentUser?.id || null)
 
-  // Solo mostrar en rutas autenticadas (excepto login)
   if (location.pathname === '/login' || !currentUser) {
     return null
   }
+
+  // Verificar soporte al montar el componente
+  useEffect(() => {
+    setSupportsFullscreen(!!document.documentElement.requestFullscreen)
+  }, [])
+
+  // Lógica de Pantalla Completa (Ideal para tablets y TVs de cocina)
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((e) => {
+        console.error(`Error al activar pantalla completa: ${e.message}`)
+      })
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handleFsChange)
+    return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [])
 
   const handleLogout = async () => {
     if (confirm('¿Seguro que deseas cerrar sesión?')) {
@@ -63,22 +86,21 @@ export default function NavBar() {
   )
 
   return (
-    <nav className="bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-2xl sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo / Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl">
-              C
+    <nav className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 text-white shadow-2xl sticky top-0 z-50 border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+          {/* Logo / Brand - Marca Blanca y Premium */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-lg shadow-purple-500/20 ring-1 ring-white/20">
+              {currentUser?.businessName?.[0] || 'R'}
             </div>
-            <div>
-              <div className="font-bold text-lg">Cevicheria Mexa</div>
-              <div className="text-xs text-gray-400">v2.0</div>
-            </div>
+            <h1 className="font-black text-sm sm:text-lg tracking-tighter hidden xs:block bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-400">
+              {currentUser?.businessName || 'REISBLOC POS'}
+            </h1>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-2">
+          {/* Navigation Links - UX Fluida */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 px-1 flex-1 justify-center sm:justify-start">
             {visibleItems.map(item => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
@@ -86,40 +108,61 @@ export default function NavBar() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                     isActive
-                      ? 'bg-white text-gray-900'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-105'
+                      : 'text-gray-400 hover:bg-white/5 hover:text-white'
                   }`}
                 >
-                  <Icon size={20} />
-                  <span className="hidden md:inline">{item.label}</span>
+                  <Icon size={18} className="sm:w-5 sm:h-5" />
+                  <span className="hidden lg:inline text-sm">{item.label}</span>
                 </Link>
               )
             })}
           </div>
 
-          {/* User Info & Logout */}
-          <div className="flex items-center gap-4">
-            {/* User Badge */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg">
-              <User size={18} />
-              <div className="text-sm">
-                <div className="font-semibold">{currentUser?.username || 'Usuario'}</div>
-                <div className="text-xs text-gray-400 capitalize flex items-center gap-1">
-                  {isReadOnly && <Eye size={12} />}
+          {/* User Info & Notifications */}
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+            {/* Fullscreen Toggle - El toque pro */}
+            {supportsFullscreen && (
+              <button
+                onClick={toggleFullScreen}
+                className="flex p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              >
+                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+              </button>
+            )}
+
+            <NotificationCenter 
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+            />
+
+            {/* User Badge - Compacto en móvil */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center">
+                <User size={14} className="text-gray-300" />
+              </div>
+              <div className="text-xs">
+                <div className="font-bold truncate max-w-[80px] text-gray-100">{currentUser?.username}</div>
+                <div className="text-[10px] text-gray-400 capitalize flex items-center gap-1">
+                  {isReadOnly && <Eye size={10} />}
                   {currentRole}
                 </div>
               </div>
             </div>
 
-            {/* Logout Button */}
+            {/* Logout Button - Icono solo en móvil */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-all"
+              className="p-2 sm:px-4 sm:py-2 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl transition-all border border-red-500/20 hover:border-red-600 shadow-lg hover:shadow-red-600/20"
+              title="Cerrar Sesión"
             >
               <LogOut size={18} />
-              <span className="hidden md:inline">Salir</span>
+              <span className="hidden md:inline ml-2 font-bold">Salir</span>
             </button>
           </div>
         </div>
