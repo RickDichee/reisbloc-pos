@@ -146,6 +146,7 @@ export function useAuth() {
       // ✅ GENERAR JWT PERSONALIZADO
       try {
         const tokenResponse = await generateAccessToken({
+          userId: user.id, // Pasamos el ID para que la consulta en jwtService sea unívoca
           pin,
           deviceId: device.id
         })

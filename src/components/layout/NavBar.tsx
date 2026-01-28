@@ -36,10 +36,6 @@ export default function NavBar() {
     markAllAsRead
   } = useNotifications(currentUser?.id || null)
 
-  if (location.pathname === '/login' || !currentUser) {
-    return null
-  }
-
   // Verificar soporte al montar el componente
   useEffect(() => {
     setSupportsFullscreen(!!document.documentElement.requestFullscreen)
@@ -63,6 +59,11 @@ export default function NavBar() {
     document.addEventListener('fullscreenchange', handleFsChange)
     return () => document.removeEventListener('fullscreenchange', handleFsChange)
   }, [])
+
+  // El return condicional debe ir DESPUÉS de todos los hooks
+  if (location.pathname === '/login' || !currentUser) {
+    return null
+  }
 
   const handleLogout = async () => {
     if (confirm('¿Seguro que deseas cerrar sesión?')) {

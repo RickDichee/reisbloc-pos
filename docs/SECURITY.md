@@ -386,53 +386,6 @@ Se registra automáticamente:
 4. Intento se registra en auditoría
 5. Admin puede ver múltiples intentos fallidos
 
-## 🔧 Implementación en Firebase
-
-### Colección: `users`
-```typescript
-{
-  id: "user_123",
-  username: "jose_garcia",
-  pin: "hash_del_pin",
-  role: "capitan",
-  active: true,
-  devices: ["device_456", "device_789"],  // IDs de dispositivos autorizados
-  createdAt: Timestamp,
-}
-```
-
-### Colección: `devices`
-```typescript
-{
-  id: "device_456",
-  userId: "user_123",
-  macAddress: "2C:A1:FF:FF:FF:FF",
-  deviceName: "iPhone 12",
-  network: "wifi",
-  os: "iOS",
-  browser: "Safari",
-  registeredAt: Timestamp,
-  lastAccess: Timestamp,
-  isApproved: true,
-}
-```
-
-### Colección: `audit_logs`
-```typescript
-{
-  id: "audit_123",
-  timestamp: Timestamp,
-  userId: "user_123",
-  action: "LOGIN_SUCCESS",
-  deviceId: "device_456",
-  ipAddress: "192.168.1.100",
-  network: "wifi",
-  metadata: {
-    browser: "Safari",
-    os: "iOS",
-  }
-}
-```
 
 ## 📱 Restricción por Dispositivo
 

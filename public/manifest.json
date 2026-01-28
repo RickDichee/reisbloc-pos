@@ -1,97 +1,23 @@
 {
-  "name": "Reisbloc POS - Sistema POS Restaurante",
-  "short_name": "Reisbloc POS",
-  "description": "Sistema de Punto de Venta profesional para restaurantes con soporte offline",
+  "name": "Reisbloc POS",
+  "short_name": "Reisbloc",
+  "description": "Punto de Venta Profesional para Restaurantes",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
-  "scope": "/",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512x512.png",
+      "src": "pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-1.png",
-      "sizes": "540x720",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshot-2.png",
-      "sizes": "540x720",
-      "type": "image/png"
-    }
-  ],
-  "categories": ["business", "productivity"],
-  "shortcuts": [
-    {
-      "name": "POS - Tomar Orden",
-      "short_name": "POS",
-      "description": "Ir directamente a la sección de POS",
-      "url": "/pos",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Cocina",
-      "short_name": "Cocina",
-      "description": "Ver órdenes pendientes en cocina",
-      "url": "/kitchen",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Mesas",
-      "short_name": "Mesas",
-      "description": "Ver estado de mesas",
-      "url": "/mesas",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "application/x-www-form-urlencoded",
-    "params": {
-      "title": "title",
-      "text": "text"
-    }
-  }
+  ]
 }

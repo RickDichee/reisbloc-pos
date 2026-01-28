@@ -21,13 +21,12 @@
 - [x] No console.log con datos sensibles
 - [x] Imports optimizados (remover unused)
 
-### ✅ Configuración Firebase
+### ✅ Configuración Supabase
 
-- [x] .env.local existe con credenciales correctas
-- [x] Emulators configurados (9099, 8080, 5001)
-- [x] firebase.ts detecta emuladores correctamente
-- [x] Firestore rules comentadas (desarrollo activo) ⚠️
-  - **IMPORTANTE**: Antes de producción, DESCOMENTAR reglas en firestore.rules
+- [x] .env.local con variables VITE_SUPABASE_*
+- [x] Conexión exitosa verificada en consola
+- [x] PWA configurada con VitePWA
+- [ ] **CRÍTICO**: Implementar seguridad RLS correcta en PostgreSQL
 
 ### ⚠️ MIGRACIÓN SUPABASE (En Proceso)
 
@@ -494,4 +493,3 @@ PIN: 5555
 **Status:** ✅ LISTO PARA DEPLOYMENT ONSITE  
 **Última actualización:** 24 de enero 2026  
 **Próxima revisión:** Después del launch
-
