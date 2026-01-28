@@ -20,14 +20,29 @@ export default function NotificationCenter({
   const [isOpen, setIsOpen] = useState(false)
   const [flash, setFlash] = useState<Notification | null>(null)
   const prevCountRef = useRef(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    // Sonido de campana tipo restaurante (Mixkit Bell)
+    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3')
+  }, [])
 
   // Mostrar aviso breve cuando llega una nueva notificación
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
 
-    if (notifications.length > prevCountRef.current) {
+    if (notifications.length > prevCountRef.current && prevCountRef.current !== 0) {
       const newest = notifications[0]
       setFlash(newest)
+
+      // 🔊 Reproducir sonido
+      audioRef.current?.play().catch(() => {})
+
+      // 📳 Vibración (Haptic feedback para móviles)
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100])
+      }
+
       timer = setTimeout(() => setFlash(null), 4000)
     }
 
@@ -54,11 +69,11 @@ export default function NotificationCenter({
   const getPriorityColor = (priority: Notification['priority']) => {
     switch (priority) {
       case 'high':
-        return 'border-l-4 border-red-500 bg-red-50'
+        return 'border-l-4 border-red-500 bg-red-500/10'
       case 'normal':
-        return 'border-l-4 border-blue-500 bg-blue-50'
+        return 'border-l-4 border-blue-500 bg-blue-500/10'
       case 'low':
-        return 'border-l-4 border-gray-500 bg-gray-50'
+        return 'border-l-4 border-gray-500 bg-gray-500/5'
     }
   }
 
@@ -88,13 +103,13 @@ export default function NotificationCenter({
           />
 
           {/* Panel */}
-          <div className="absolute right-0 mt-3 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] flex flex-col">
+          <div className="absolute right-0 mt-3 w-[calc(100vw-6rem)] xs:w-64 sm:w-96 bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 z-50 max-h-[40vh] sm:max-h-[70vh] flex flex-col overflow-hidden ring-1 ring-black/5">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+              <h3 className="text-lg font-bold text-white">
                 Notificaciones
                 {unreadCount > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
+                  <span className="ml-2 text-sm text-blue-400 font-medium">
                     ({unreadCount} nueva{unreadCount !== 1 ? 's' : ''})
                   </span>
                 )}
@@ -103,7 +118,7 @@ export default function NotificationCenter({
                 {unreadCount > 0 && (
                   <button
                     onClick={onMarkAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
                     title="Marcar todas como leídas"
                   >
                     <CheckCheck className="w-4 h-4" />
@@ -111,7 +126,7 @@ export default function NotificationCenter({
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -121,17 +136,17 @@ export default function NotificationCenter({
             {/* Notifications List */}
             <div className="overflow-y-auto flex-1">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No tienes notificaciones</p>
+                <div className="p-6 text-center">
+                  <Bell className="w-8 h-8 mx-auto mb-3 text-gray-800" />
+                  <p className="text-gray-500 font-medium">Bandeja vacía</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-white/5">
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                        !notification.read ? getPriorityColor(notification.priority) : 'bg-white'
+                      className={`p-3 sm:p-4 hover:bg-white/5 transition-all cursor-pointer ${
+                        !notification.read ? getPriorityColor(notification.priority) : ''
                       }`}
                       onClick={() => notification.id && !notification.read && onMarkAsRead(notification.id)}
                     >
@@ -141,18 +156,18 @@ export default function NotificationCenter({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
+                            <p className={`text-sm font-bold ${!notification.read ? 'text-white' : 'text-gray-400'}`}>
                               {notification.title}
                             </p>
                             {!notification.read && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-1" />
+                              <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-1 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                             )}
                           </div>
-                          <p className={`text-sm mt-1 ${!notification.read ? 'text-gray-700' : 'text-gray-500'}`}>
+                          <p className={`text-sm mt-1 leading-relaxed ${!notification.read ? 'text-gray-200' : 'text-gray-500'}`}>
                             {notification.body}
                           </p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            {formatDistanceToNow(notification.createdAt.toDate(), {
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-3 font-semibold">
+                            {formatDistanceToNow(new Date(notification.createdAt || (notification as any).created_at), {
                               addSuffix: true,
                               locale: es
                             })}
@@ -167,9 +182,9 @@ export default function NotificationCenter({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-gray-200 text-center">
+              <div className="p-3 border-t border-white/5 bg-white/5 text-center">
                 <button
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-400 hover:text-blue-300 font-bold transition-colors"
                   onClick={() => {
                     setIsOpen(false)
                     // Aquí podrías navegar a una página de notificaciones completa
@@ -185,19 +200,26 @@ export default function NotificationCenter({
 
       {/* Aviso flotante rápido cuando llega una nueva notificación */}
       {flash && !isOpen && (
-        <div className="absolute right-0 mt-3 w-72 bg-white/95 backdrop-blur rounded-lg shadow-xl border border-blue-200 z-40 animate-slide-in">
-          <div className="flex items-start gap-3 p-3">
-            <Bell className="w-5 h-5 text-blue-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">{flash.title}</p>
-              <p className="text-xs text-gray-600 line-clamp-2">{flash.body}</p>
+        <div 
+          className="fixed bottom-6 left-4 right-4 sm:absolute sm:bottom-auto sm:top-full sm:left-auto sm:right-0 mt-3 w-auto sm:w-80 bg-gray-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 z-[100] animate-slide-in overflow-hidden cursor-pointer"
+          onClick={() => setIsOpen(true)}
+        >
+          <div className="flex items-center gap-4 p-4">
+            <div className="bg-blue-500/20 p-2 rounded-xl">
+              <Bell className="w-6 h-6 text-blue-400 animate-bounce" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white truncate">{flash.title}</p>
+              <p className="text-xs text-gray-300 line-clamp-1">{flash.body}</p>
             </div>
             <button
-              onClick={() => setFlash(null)}
-              className="text-gray-400 hover:text-gray-600"
-              aria-label="Cerrar aviso"
+              onClick={(e) => {
+                e.stopPropagation()
+                setFlash(null)
+              }}
+              className="p-1 hover:bg-white/10 rounded-full transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 text-gray-400" />
             </button>
           </div>
         </div>

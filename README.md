@@ -1,7 +1,6 @@
 # Reisbloc POS - Professional Edition 🍽️
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
-![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+![License](https://img.shields.io/badge/license-AGPL--3.0-purple)
 ![MercadoPago](https://img.shields.io/badge/payments-MercadoPago-00b1ea)
 ![Made in Mexico](https://img.shields.io/badge/hecho_en-México_🇲🇽-green)
 
@@ -328,7 +327,7 @@ Ver roadmap completo: [docs/VISION.md](./docs/VISION.md)
 
 - 🌎 **Basados en:** Playa del Carmen, México 🇲🇽
 - 🎯 **Misión:** Democratizar tecnología empresarial de calidad
-- 💡 **Filosofía:** Open source, win-win, sin bullshit
+- 💡 **Filosofía:** Open source, win-win, tecnología real para negocios
 
 ---
 
@@ -338,8 +337,8 @@ A todos los restauranteros que confiaron en un POS "hecho en casa". Este softwar
 
 ---
 
-**Versión:** 2.0.0  
-**Última actualización:** Enero 2026  
+**Versión:** 3.0.0  
+**Última actualización:** Febrero 2026  
 **Estado:** ✅ Producción activa
 
 **Hecho con ❤️ en México**
