@@ -1,11 +1,18 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+/**
+ * Reisbloc POS - Edge Function: Generate Access Token
+ * Genera un JWT firmado para que el frontend pueda autenticarse con RLS.
+ * 
+ * Despliegue:
+ * supabase functions deploy generate-access-token --project-ref nmovxyaibnixvxtepbod
+ */
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'dev-secret-change-in-production';
 const JWT_EXPIRY = 24 * 60 * 60;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -38,27 +45,29 @@ async function generateAccessToken(userId: string, role: string, deviceId: strin
 }
 
 serve(async (req: Request) => {
-  // Manejo de CORS (Pre-flight)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders, status: 200 });
   }
 
   try {
-    // Intentar leer el body de forma segura
-    const body = await req.json().catch(() => null);
-    
-    if (!body) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-        status: 400,
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
     const userId = body.userId || body.user_id;
     const role = body.role;
     const deviceId = body.deviceId || body.device_id;
-    
-    console.log(`[AUTH] Solicitud de token para usuario: ${userId}, rol: ${role}`);
 
     if (!userId || !role || !deviceId) {
       return new Response(JSON.stringify({ error: 'Missing fields', received: body }), {
@@ -66,6 +75,8 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    console.log(`[AUTH] Solicitud de token para usuario: ${userId}, rol: ${role}`);
 
     const accessToken = await generateAccessToken(userId, role, deviceId);
     

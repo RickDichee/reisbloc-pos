@@ -2,6 +2,7 @@ import { supabase } from '@/config/supabase'
 import logger from '@/utils/logger'
 
 interface LoginPayload {
+  userId: string
   pin: string
   deviceId: string
 }
@@ -25,6 +26,7 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, name, role, pin')
+      .eq('id', payload.userId)
       .eq('pin', payload.pin)
       .single()
 
@@ -34,11 +36,15 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
     }
 
     // 2) Llamar a la Edge Function para obtener JWT firmado
+    // Forzamos el uso de la anon key para esta llamada específica
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    supabase.functions.setAuth(anonKey);
+
     const { data, error } = await supabase.functions.invoke('generate-access-token', {
       body: {
         userId: user.id,
         role: user.role,
-        deviceId: payload.deviceId
+        deviceId: payload.deviceId || 'unknown'
       }
     })
 
@@ -110,6 +116,5 @@ export function clearAuthToken(): void {
  */
 export function isTokenValid(): boolean {
   const token = getStoredToken()
-  return !!(token && token.accessToken && token.expiresAt > Date.now())
+  return !!(token && token.accessToken && typeof token.expiresAt === 'number' && token.expiresAt > Date.now())
 }
-
