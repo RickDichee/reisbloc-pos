@@ -16,7 +16,14 @@ const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim()
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
 // Detectamos staging si estamos en una URL de preview de Vercel o si la variable está explícita
-const environment = import.meta.env.VITE_ENVIRONMENT || (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') ? 'staging' : import.meta.env.MODE)
+const getEnvironment = () => {
+  if (import.meta.env.VITE_ENVIRONMENT) return import.meta.env.VITE_ENVIRONMENT;
+  if (typeof window !== 'undefined' && window.location.hostname.includes('-preview')) return 'staging-preview';
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) return 'staging';
+  return import.meta.env.MODE;
+};
+
+const environment = getEnvironment();
 
 // Verificar que las variables estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {

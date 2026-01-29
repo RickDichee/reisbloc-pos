@@ -15,7 +15,7 @@ function encodeBase64Url(input: string | Uint8Array): string {
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-async function generateAccessToken(userId, role, deviceId) {
+async function generateAccessToken(userId: string, role: string, deviceId: string) {
   const header = encodeBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
   const claims = encodeBase64Url(JSON.stringify({
@@ -37,11 +37,11 @@ async function generateAccessToken(userId, role, deviceId) {
   return `${message}.${signature}`;
 }
 
-serve(async (req)=>{
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { userId, role, deviceId } = await req.json();
+    const { userId, role, deviceId } = await req.json() as { userId: string, role: string, deviceId: string };
     if (!userId || !role || !deviceId) return new Response(JSON.stringify({
       error: 'Missing fields'
     }), {
