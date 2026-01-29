@@ -23,6 +23,7 @@ import OfflineIndicator from '@/components/common/OfflineIndicator'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { useNotifications } from '@/hooks/useNotifications'
 import { Bell, Share, PlusSquare } from 'lucide-react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const Login = lazy(() => import('@/pages/Login'))
 const POS = lazy(() => import('@/pages/POS'))
@@ -174,6 +175,7 @@ function App() {
           </Routes>
         </Suspense>
       </div>
+      <SpeedInsights />
     </ToastProvider>
     </Router>
   )
