@@ -26,11 +26,11 @@
 -- ✅ IMPLEMENTADO: Trigger de inventario automatizado
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
 -- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo
 -- ✅ IMPLEMENTADO: RLS permisivo en Staging (Fix Error 42501 en Staging)
 -- ✅ IMPLEMENTADO: Configuración de variables de entorno en Vercel (Staging)
 -- ✅ IMPLEMENTADO: Sincronización de ramas feat/supabase-backend -> Staging
 -- ✅ IMPLEMENTADO: Configuración de JWT_SECRET en Supabase Secrets (Staging)
--- ✅ IMPLEMENTADO: Verificación y corrección de CORS en Edge Functions
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
 -- ✅ IMPLEMENTADO: Endurecimiento de RLS basado en Roles de JWT (v3.0.0-stable-auth)
 -- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
