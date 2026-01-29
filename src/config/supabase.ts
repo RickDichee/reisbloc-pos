@@ -11,11 +11,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { getStoredToken } from '@/services/jwtService'
 
-// Supabase configuration
+// Configuración de Supabase con detección de entorno robusta
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim()
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim()
-const environment = import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development'
+// Detectamos staging si estamos en una URL de preview de Vercel o si la variable está explícita
+const environment = import.meta.env.VITE_ENVIRONMENT || (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') ? 'staging' : import.meta.env.MODE)
 
 // Verificar que las variables estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -24,7 +25,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.info(`💡 Tip: Revisa tu archivo .env.${environment === 'development' ? 'local' : environment} o las variables en Vercel.`)
 } else {
   // Log informativo premium con estilo para la consola
-  console.log(`%c🌐 Reisbloc POS %c Conectado a: ${environment.toUpperCase()}`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;')
+  console.log(`%c🌐 Reisbloc POS %c Conectado a: ${environment.toUpperCase()} %c URL: ${supabaseUrl.substring(0, 15)}...`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;', 'color: #666; font-style: italic;')
 }
 
 // Create Supabase client
