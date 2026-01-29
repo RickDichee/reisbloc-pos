@@ -69,20 +69,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Inicializar el estado de autenticación si existe un token guardado
-const initialToken = getStoredToken()?.accessToken;
-if (initialToken && initialToken.split('.').length === 3) {
-  // Solo aplicamos el token si parece un JWT válido (3 partes separadas por puntos)
-  supabase.functions.setAuth(initialToken);
-  // Establecemos la sesión inicial para que las políticas RLS funcionen desde el primer render
-  void supabase.auth.setSession({
-    access_token: initialToken,
-    refresh_token: initialToken
-  });
-}
-
 // Actualizar token cuando cambie
 export async function setAuthToken(token: string | null) {
+  // Con Supabase Auth, este método es opcional ya que el SDK maneja la sesión,
+  // pero lo mantenemos para compatibilidad con Edge Functions si fuera necesario.
   try {
     if (!token) {
       await supabase.auth.signOut()

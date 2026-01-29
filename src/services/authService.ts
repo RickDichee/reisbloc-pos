@@ -23,45 +23,143 @@ interface LoginResult {
   error?: string
 }
 
+/**
+ * 🔐 AUTENTICACIÓN PARA ADMINISTRADORES (Email/Password)
+ * Ideal para gestión remota y uso de gestores de contraseñas.
+ */
+export async function adminLoginWithEmail(email: string, password: string): Promise<LoginResult> {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    
+    const user = await mapSupabaseUser(data.user)
+    if (!user) return { success: false, error: 'Usuario no vinculado en base de datos' }
+    
+    if (user.role !== 'admin') {
+      await supabase.auth.signOut()
+      return { success: false, error: 'Acceso restringido a Administradores' }
+    }
+
+    return { success: true, user, token: data.session?.access_token }
+  } catch (error: any) {
+    logger.error('auth', '❌ Error en login de admin', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * 🌐 AUTENTICACIÓN OAUTH (Google / Apple)
+ * Inicia el flujo de redirección. El resultado se procesa en el callback.
+ */
+export async function adminLoginWithOAuth(provider: 'google' | 'apple') {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'select_account',
+      },
+    }
+  })
+  if (error) throw error
+}
+
+/**
+ * 🚀 BOOTSTRAP: Crea el primer administrador del sistema (Staging/Prod)
+ * Solo funcionará si la tabla de usuarios está vacía.
+ */
+export async function setupInitialAdmin(email: string, pin: string, name: string): Promise<LoginResult> {
+  try {
+    // 1. Verificar si ya existen usuarios para evitar duplicidad
+    const { count } = await supabase.from('users').select('*', { count: 'exact', head: true })
+    if (count && count > 0) throw new Error('El sistema ya tiene usuarios configurados.')
+
+    // 2. Crear usuario en Supabase Auth
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password: pin,
+      options: { data: { full_name: name } }
+    })
+    if (error) throw error
+    if (!data.user) throw new Error('Error al crear cuenta de autenticación')
+
+    // 3. Crear perfil en la tabla pública
+    const { error: dbError } = await supabase.from('users').insert([{
+      id: data.user.id,
+      name,
+      role: 'admin',
+      pin, // El admin también puede usar el PIN Pad si está en el local
+      active: true
+    }])
+    if (dbError) throw dbError
+
+    return { success: true, token: data.session?.access_token }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Helper para mapear el usuario de Auth a nuestro modelo de dominio
+ */
+async function mapSupabaseUser(supabaseUser: any): Promise<User | null> {
+  if (!supabaseUser) return null
+  
+  const { data, error } = await supabase.from('users').select('*').eq('id', supabaseUser.id).single()
+  if (error || !data) return null
+  return {
+    id: data.id,
+    username: data.name,
+    role: data.role,
+    pin: data.pin || '',
+    active: data.active,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    devices: []
+  }
+}
+
 export async function authLogin(pin: string): Promise<LoginResult> {
   try {
     logger.info('auth', '🔐 Iniciando autenticación')
     
     if (useSupabaseAuth) {
-      // Modo Supabase: Comparar PIN directamente con service_role key (bypassa RLS)
-      logger.info('auth', '🔍 Buscando usuario en Supabase...')
+      // Opción 1: Supabase Auth + JWT Nativo
+      logger.info('auth', '🔍 Autenticando con Supabase Auth...')
       
-      // Usar el cliente normal. El PIN debe ser accesible vía RLS para anon o el rol actual.
-      const { data: users, error } = await supabase
+      // 1. Identificar al usuario por su PIN para obtener su nombre real
+      const { data: users, error: searchError } = await supabase
         .from('users')
         .select('*')
         .eq('pin', pin)
         .eq('active', true)
         .limit(1)
 
-      if (error) {
-        logger.error('auth', '❌ Error consultando Supabase', { error: error.message })
-        return { success: false, error: 'Error de conexión a base de datos' }
-      }
-
-      if (!users || users.length === 0) {
+      if (searchError || !users || users.length === 0) {
         logger.error('auth', '❌ PIN incorrecto o usuario no encontrado')
-        return { success: false, error: 'PIN incorrecto' }
+        return { success: false, error: 'PIN incorrecto o usuario no activo' }
       }
 
       const userData = users[0]
-      const user: User = {
-        id: userData.id,
-        username: userData.name,
-        role: userData.role,
-        pin: '',
-        active: userData.active,
-        createdAt: new Date(userData.created_at),
-        devices: [],
+      
+      // 2. Login real en Supabase Auth (Email generado + PIN como password)
+      const authEmail = `${userData.name.toLowerCase().replace(/\s+/g, '')}@reisbloc.pos`
+      
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: pin
+      })
+
+      if (authError) {
+        logger.error('auth', '❌ Error en Supabase Auth', { error: authError.message })
+        return { success: false, error: 'Error de sesión oficial' }
       }
 
-      logger.info('auth', '✅ Autenticación exitosa con Supabase', { username: user.username })
-      return { success: true, user }
+      const user = await mapSupabaseUser(authData.user)
+      if (!user) return { success: false, error: 'Perfil de usuario no encontrado en la base de datos' }
+
+      logger.info('auth', '✅ Login exitoso con Supabase Auth', { username: user.username })
+      return { success: true, user, token: authData.session?.access_token }
     } else {
       logger.error('auth', '❌ Modo de autenticación no soportado')
       return { success: false, error: 'Configuración de autenticación inválida' }
@@ -88,12 +186,21 @@ export async function authLogout(): Promise<void> {
 export async function getCurrentUser(): Promise<User | null> {
   try {
     if (useSupabaseAuth) {
-      const { data, error } = await supabase.auth.getUser()
-      if (error || !data.user) return null
-      return null // useAuth maneja el estado
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error || !session?.user) return null
+      return await mapSupabaseUser(session.user)
     }
   } catch (error) {
     logger.error('auth', 'Error getting user', error)
   }
   return null
+}
+
+/**
+ * Obtiene la sesión actual de forma asíncrona
+ */
+export async function getSession() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  return data.session
 }
