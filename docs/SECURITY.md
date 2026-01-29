@@ -1,18 +1,18 @@
 # Documentación de Seguridad - Reisbloc POS
 
-## ⚠️ ESTADO DE MIGRACIÓN A SUPABASE
+## ✅ ESTADO DE MIGRACIÓN A SUPABASE
 
 ### 🏆 HITOS ESTABLES (PUNTOS DE RESTAURACIÓN)
 
 | Versión/Tag | Descripción | Fecha |
 |-------------|-------------|-------|
-| `v3.0.0-stable-auth` | Auth por PIN + Generación de JWT + RLS Staging funcionando. | Feb 2026 |
+| `v3.1.0-stable` | Auth Híbrida (PIN/OAuth) + RLS + Deploy Vercel. | Feb 2026 |
 
-**CRÍTICO:** La aplicación está en proceso de migración de Firebase a Supabase PostgreSQL.
+**ESTADO:** Migración completada con éxito. Sistema operando sobre Supabase PostgreSQL.
 
-### Seguridad RLS Actual (MIGRANDO A PRODUCCIÓN)
+### Seguridad RLS Implementada
 
-**⚠️ CONFIGURACIÓN EN PROCESO - RAMA: feat/supabase-backend**
+**CONFIGURACIÓN FINAL - RAMA: master**
 
 ```sql
 -- ✅ IMPLEMENTADO: Restricción de PIN único en users
@@ -24,6 +24,7 @@
 -- ✅ IMPLEMENTADO: Estandarización forzada de nombres a snake_case (Fix Error 42703 - Final)
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
 -- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo
 -- ✅ IMPLEMENTADO: Sincronización de ramas feat/supabase-backend -> Staging
 -- ✅ IMPLEMENTADO: Configuración de JWT_SECRET en Supabase Secrets (Staging)
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
