@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'dev-secret-change-in-production';
 const JWT_EXPIRY = 24 * 60 * 60;
@@ -38,18 +38,26 @@ async function generateAccessToken(userId: string, role: string, deviceId: strin
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  // Manejo de CORS (Pre-flight)
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
-    const { userId, role, deviceId } = await req.json() as { userId: string, role: string, deviceId: string };
-    if (!userId || !role || !deviceId) return new Response(JSON.stringify({
-      error: 'Missing fields'
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    const body = await req.json();
+    const { userId, role, deviceId } = body as { userId: string, role: string, deviceId: string };
+    
+    console.log(`Generating token for user: ${userId}, role: ${role}`);
+
+    if (!userId || !role || !deviceId) {
+      return new Response(JSON.stringify({ error: 'Missing fields', received: body }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     const accessToken = await generateAccessToken(userId, role, deviceId);
+    
     return new Response(JSON.stringify({
       accessToken,
       expiresIn: JWT_EXPIRY,
@@ -59,9 +67,10 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Edge Function Error:', error);
     return new Response(JSON.stringify({
-      error: 'Internal error'
+      error: 'Internal error',
+      details: error instanceof Error ? error.message : String(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
