@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build:staging",
+  "outputDirectory": "dist",
+  "framework": null,
+  "env": {
+    "VITE_ENVIRONMENT": "staging"
+  },
+  "preview": {
+    "buildCommand": "npm run build:staging",
+    "outputDirectory": "dist"
+  },
+  "production": {
+    "buildCommand": "npm run build:prod",
+    "outputDirectory": "dist"
+  }
+}
