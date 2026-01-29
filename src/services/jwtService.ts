@@ -40,7 +40,7 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
       body: {
         userId: user.id,
         role: user.role,
-        deviceId: payload.deviceId
+        deviceId: payload.deviceId || 'unknown'
       }
     })
 
