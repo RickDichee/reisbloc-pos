@@ -1,4 +1,14 @@
 /**
+ * 🛑 ¡ATENCIÓN! ARCHIVO CRÍTICO DE CONFIGURACIÓN 🛑
+ * ---------------------------------------------------------
+ * ESTE ARCHIVO ES FUNDAMENTAL PARA LA CONEXIÓN CON SUPABASE.
+ * NO MODIFICAR SIN PRUEBAS EXHAUSTIVAS EN STAGING.
+ * 
+ * ESTADO: FUNCIONAL Y VALIDADO (FEBRERO 2026)
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
+/**
  * Reisbloc POS - Sistema POS Profesional
  * Copyright (C) 2026 Reisbloc Lab
  * 

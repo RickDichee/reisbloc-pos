@@ -1,4 +1,14 @@
 /**
+ * 🛑 ¡ATENCIÓN! CAPA DE DATOS CRÍTICA 🛑
+ * ---------------------------------------------------------
+ * ESTE SERVICIO MANEJA TODAS LAS OPERACIONES DE POSTGRESQL.
+ * LAS POLÍTICAS RLS DEPENDEN DE LA ESTRUCTURA DE ESTAS CONSULTAS.
+ * 
+ * ESTADO: MIGRACIÓN A SUPABASE VALIDADA
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
+/**
  * Reisbloc POS - Sistema POS Profesional
  * Copyright (C) 2026 Reisbloc POS
  * 

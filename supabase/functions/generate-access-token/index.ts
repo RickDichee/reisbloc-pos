@@ -1,4 +1,14 @@
 /**
+ * 🛑 ¡ATENCIÓN! ARCHIVO CRÍTICO DE SEGURIDAD 🛑
+ * ---------------------------------------------------------
+ * ESTA FUNCIÓN GENERA LOS TOKENS DE ACCESO PARA EL SISTEMA.
+ * CUALQUIER CAMBIO AQUÍ PUEDE BLOQUEAR EL ACCESO A TODO EL POS.
+ * 
+ * ESTADO: FUNCIONAL Y VALIDADO (FEBRERO 2026)
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
+/**
  * Reisbloc POS - Edge Function: Generate Access Token
  * Genera un JWT firmado para que el frontend pueda autenticarse con RLS.
  * 
