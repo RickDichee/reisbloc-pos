@@ -32,7 +32,9 @@
 -- ✅ IMPLEMENTADO: Configuración de JWT_SECRET en Supabase Secrets (Staging)
 -- ✅ IMPLEMENTADO: Verificación y corrección de CORS en Edge Functions
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
--- ⏳ PENDIENTE: Endurecimiento de RLS en Producción (Opción 2)
+-- ✅ IMPLEMENTADO: Endurecimiento de RLS basado en Roles de JWT (v3.0.0-stable-auth)
+-- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
+-- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
 ```
 
 Esto permite desarrollo rápido pero **NO ES SEGURO** para producción.

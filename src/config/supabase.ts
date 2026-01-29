@@ -112,4 +112,7 @@ export const isSupabaseAvailable = (): boolean => {
   return !!(supabaseUrl && supabaseAnonKey)
 }
 
+// Exportación temporal para evitar errores en archivos legacy que aún no migran a Edge Functions
+export const supabaseAdmin = null as any;
+
 export default supabase

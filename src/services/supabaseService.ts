@@ -723,10 +723,10 @@ class SupabaseService {
       logger.info('supabase', '   - payment_method:', payload.payment_method)
       logger.info('supabase', '   - items count:', payload.items?.length || 0)
       
-      // Use returning: 'minimal' to avoid SELECT and bypass RLS on select
+      // En v2, omitir .select() equivale a returning: 'minimal'
       const { error } = await supabase
         .from('sales')
-        .insert([payload], { returning: 'minimal' })
+        .insert([payload])
 
       if (error) {
         logger.error('supabase', '❌ Supabase insert error:', {
@@ -827,7 +827,7 @@ class SupabaseService {
 
       const { error } = await supabase
         .from('closings')
-        .insert([payload], { returning: 'minimal' })
+        .insert([payload])
 
       if (error) {
         logger.error('supabase', '❌ Error saving closing:', error)
