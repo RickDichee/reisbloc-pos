@@ -141,11 +141,11 @@ export async function authLogin(pin: string): Promise<LoginResult> {
       }
 
       const userData = users[0]
-
+      
       // 2. Generar email virtual: "Admin Inicial 1" -> "admininicial1@reisbloc.pos"
       const authEmail = `${userData.name.toLowerCase().replace(/\s+/g, '')}@reisbloc.pos`
       logger.debug('auth', `Intentando login para: ${authEmail}`)
-
+      
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: authEmail,
         password: pin
@@ -153,7 +153,7 @@ export async function authLogin(pin: string): Promise<LoginResult> {
 
       if (authError) {
         logger.error('auth', '❌ Error en Supabase Auth', { email: authEmail, error: authError.message })
-        return { success: false, error: 'Error de acceso: El usuario no está configurado correctamente' }
+        return { success: false, error: 'Error de acceso: Credenciales no sincronizadas en Auth' }
       }
 
       const user = await mapSupabaseUser(authData.user)

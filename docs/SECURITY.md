@@ -1,18 +1,18 @@
 # Documentación de Seguridad - Reisbloc POS
 
-## ✅ ESTADO DE MIGRACIÓN A SUPABASE
+## 🏆 ESTADO DE MIGRACIÓN: ESTABLE
 
 ### 🏆 HITOS ESTABLES (PUNTOS DE RESTAURACIÓN)
 
 | Versión/Tag | Descripción | Fecha |
 |-------------|-------------|-------|
-| `v3.1.0-stable` | Auth Híbrida (PIN/OAuth) + RLS + Deploy Vercel. | Feb 2026 |
+| `v3.1.1-stable` | Fix: Error Boundary + Edge Function Diagnostics (aa37bd6) | Feb 2026 |
 
-**ESTADO:** Migración completada con éxito. Sistema operando sobre Supabase PostgreSQL.
+**ESTADO:** Sincronización completada. Rama `master` alineada con `staging` (feat/supabase-backend).
 
-### Seguridad RLS Implementada
+### 🔒 Seguridad RLS Implementada
 
-**CONFIGURACIÓN FINAL - RAMA: master**
+**CONFIGURACIÓN FINAL - RAMA: master / staging**
 
 ```sql
 -- ✅ IMPLEMENTADO: Restricción de PIN único en users
