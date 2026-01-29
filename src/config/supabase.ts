@@ -28,7 +28,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Evitamos que la aplicación truene (crash) si las variables no están definidas usando placeholders
+const finalUrl = supabaseUrl || 'https://missing-url.supabase.co'
+const finalKey = supabaseAnonKey || 'missing-key'
+
+export const supabase = createClient(finalUrl, finalKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
