@@ -16,19 +16,14 @@
 
 ```sql
 -- ✅ IMPLEMENTADO: Restricción de PIN único en users
--- ✅ IMPLEMENTADO: Traspaso de integridad referencial en borrado de usuarios
--- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales
+-- ✅ IMPLEMENTADO: Integridad referencial en borrado de usuarios
 -- ✅ IMPLEMENTADO: Trigger de descuento automático de stock
 -- ✅ IMPLEMENTADO: RLS de productos filtrado por rol (Cocina/Bar)
 -- ✅ IMPLEMENTADO: Vista SQL para reporte de stock bajo (low_stock_report)
 -- ✅ IMPLEMENTADO: Restricción total de role 'anon' en tabla products
 -- ✅ IMPLEMENTADO: Estandarización forzada de nombres a snake_case (Fix Error 42703 - Final)
--- ✅ IMPLEMENTADO: Trigger de inventario automatizado
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
 -- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
--- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo
--- ✅ IMPLEMENTADO: RLS permisivo en Staging (Fix Error 42501 en Staging)
--- ✅ IMPLEMENTADO: Configuración de variables de entorno en Vercel (Staging)
 -- ✅ IMPLEMENTADO: Sincronización de ramas feat/supabase-backend -> Staging
 -- ✅ IMPLEMENTADO: Configuración de JWT_SECRET en Supabase Secrets (Staging)
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)

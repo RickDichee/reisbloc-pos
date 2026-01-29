@@ -35,7 +35,7 @@ export async function adminLoginWithEmail(email: string, password: string): Prom
     const user = await mapSupabaseUser(data.user)
     if (!user) return { success: false, error: 'Usuario no vinculado en base de datos' }
     
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'superuser') {
       await supabase.auth.signOut()
       return { success: false, error: 'Acceso restringido a Administradores' }
     }
@@ -137,13 +137,14 @@ export async function authLogin(pin: string): Promise<LoginResult> {
 
       if (searchError || !users || users.length === 0) {
         logger.error('auth', '❌ PIN incorrecto o usuario no encontrado')
-        return { success: false, error: 'PIN incorrecto o usuario no activo' }
+        return { success: false, error: 'PIN no reconocido en el sistema' }
       }
 
       const userData = users[0]
       
-      // 2. Login real en Supabase Auth (Email generado + PIN como password)
+      // 2. Generar email virtual: "Admin Inicial 1" -> "admininicial1@reisbloc.pos"
       const authEmail = `${userData.name.toLowerCase().replace(/\s+/g, '')}@reisbloc.pos`
+      logger.debug('auth', `Intentando login para: ${authEmail}`)
       
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: authEmail,
@@ -151,12 +152,12 @@ export async function authLogin(pin: string): Promise<LoginResult> {
       })
 
       if (authError) {
-        logger.error('auth', '❌ Error en Supabase Auth', { error: authError.message })
-        return { success: false, error: 'Error de sesión oficial' }
+        logger.error('auth', '❌ Error en Supabase Auth', { email: authEmail, error: authError.message })
+        return { success: false, error: 'Error de acceso: El usuario no está configurado en el servidor de autenticación' }
       }
 
       const user = await mapSupabaseUser(authData.user)
-      if (!user) return { success: false, error: 'Perfil de usuario no encontrado en la base de datos' }
+      if (!user) return { success: false, error: 'Perfil de usuario no vinculado' }
 
       logger.info('auth', '✅ Login exitoso con Supabase Auth', { username: user.username })
       return { success: true, user, token: authData.session?.access_token }
