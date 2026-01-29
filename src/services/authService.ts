@@ -9,7 +9,7 @@
  */
 
 // Servicio de autenticación solo Supabase
-import { supabase, supabaseAdmin } from '@/config/supabase'
+import { supabase } from '@/config/supabase'
 
 import logger from '@/utils/logger'
 import { User } from '@/types/index'
@@ -31,8 +31,8 @@ export async function authLogin(pin: string): Promise<LoginResult> {
       // Modo Supabase: Comparar PIN directamente con service_role key (bypassa RLS)
       logger.info('auth', '🔍 Buscando usuario en Supabase...')
       
-      // Usar supabaseAdmin para bypassar RLS
-      const { data: users, error } = await supabaseAdmin
+      // Usar el cliente normal. El PIN debe ser accesible vía RLS para anon o el rol actual.
+      const { data: users, error } = await supabase
         .from('users')
         .select('*')
         .eq('pin', pin)
@@ -63,33 +63,8 @@ export async function authLogin(pin: string): Promise<LoginResult> {
       logger.info('auth', '✅ Autenticación exitosa con Supabase', { username: user.username })
       return { success: true, user }
     } else {
-      // Modo Supabase
-      
-      const loginFunction = httpsCallable(functions, 'loginWithPin')
-      const result = await loginFunction({ pin })
-      const data = result.data as any
-
-      if (!data.success || !data.user) {
-        logger.error('auth', '❌ Autenticación fallida', { data })
-        return { success: false, error: data.error || 'Error en autenticación' }
-      }
-
-      const user: User = {
-        id: data.user.id,
-        username: data.user.username,
-        role: data.user.role,
-        pin: '',
-        active: data.user.active,
-        createdAt: new Date(),
-        devices: data.user.devices || [],
-      }
-
-      if (data.token) {
-        await signInWithCustomToken(auth, data.token)
-      }
-      
-      // logger.info('auth', '✅ Autenticación exitosa con Supabase', { username: user.username })
-      return { success: true, user, token: data.token }
+      logger.error('auth', '❌ Modo de autenticación no soportado')
+      return { success: false, error: 'Configuración de autenticación inválida' }
     }
   } catch (error: any) {
     logger.error('auth', '❌ Error en login', error)
@@ -102,7 +77,7 @@ export async function authLogout(): Promise<void> {
     if (useSupabaseAuth) {
       await supabase.auth.signOut()
     } else {
-      // await supabaseSignOut()
+      logger.warn('auth', 'Logout intentado en modo no-Supabase')
     }
     logger.info('auth', 'Logout exitoso')
   } catch (error: any) {

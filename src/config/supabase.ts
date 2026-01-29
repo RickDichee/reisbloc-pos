@@ -27,9 +27,12 @@ const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || 'missing-key'
 
 // Detectamos staging si estamos en una URL de preview de Vercel o si la variable está explícita
 const getEnvironment = () => {
-  if (import.meta.env.VITE_ENVIRONMENT) return import.meta.env.VITE_ENVIRONMENT.toLowerCase();
-  if (typeof window !== 'undefined' && window.location.hostname.includes('-preview')) return 'staging';
-  if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('staging'))) return 'staging';
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const envVar = import.meta.env.VITE_ENVIRONMENT?.toLowerCase();
+
+  if (envVar) return envVar;
+  if (hostname.includes('-preview') || hostname.includes('staging')) return 'staging';
+  if (hostname.includes('vercel.app')) return 'staging';
   return import.meta.env.MODE;
 };
 
@@ -46,7 +49,7 @@ if (supabaseUrl.includes('missing') || supabaseAnonKey.includes('missing')) {
   const statusEmoji = isServiceKey ? '⚠️ PELIGRO: USANDO SERVICE_ROLE' : '✅';
   
   // Log informativo premium con estilo para la consola
-  console.log(`%c🌐 Reisbloc POS %c ${statusEmoji} ${environment.toUpperCase()} %c ${supabaseUrl.substring(0, 25)}...`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;', 'color: #666; font-style: italic;')
+  console.log(`%c🌐 Reisbloc POS %c ${statusEmoji} ${environment.toUpperCase()} %c ${supabaseUrl.substring(0, 20)}...`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;', 'color: #666; font-style: italic;')
 }
 
 // Create Supabase client
@@ -111,8 +114,4 @@ export const SUPABASE_FEATURES = {
 export const isSupabaseAvailable = (): boolean => {
   return !!(supabaseUrl && supabaseAnonKey)
 }
-
-// Exportación temporal para evitar errores en archivos legacy que aún no migran a Edge Functions
-export const supabaseAdmin = null as any;
-
 export default supabase
