@@ -233,9 +233,9 @@ public/
 │   │   ├── name: string
 │   │   ├── price: number
 │   │   ├── category: string
-│   │   ├── hasInventory: boolean
-│   │   ├── currentStock: number (opcional)
-│   │   ├── minimumStock: number (opcional)
+│   │   ├── has_inventory: boolean
+│   │   ├── current_stock: number (opcional)
+│   │   ├── minimum_stock: number (opcional)
 │   │   ├── active: boolean
 │   │   └── createdAt: timestamp
 │   └── product_2
@@ -377,10 +377,19 @@ GitHub Actions
     ├─ Lint Code
     └─ Build
     ↓
-Deploy a Producción
-    ├─ Frontend (Vercel/Netlify)
-    ├─ Edge Functions (Supabase)
-    └─ Database (PostgreSQL)
+## 🌐 Gestión de Entornos
+
+Para evitar interferencias entre el desarrollo y la experiencia de los usuarios reales:
+
+1. **Producción (Rama master):** Conectada al proyecto Supabase `PROD`.
+2. **Staging (Rama staging):** Conectada al proyecto Supabase `DEV/TEST`.
+
+### Variables de Entorno Requeridas:
+- `VITE_SUPABASE_URL`: URL del proyecto correspondiente.
+- `VITE_SUPABASE_ANON_KEY`: Anon key del proyecto correspondiente.
+- `VITE_ENVIRONMENT`: 'production' o 'staging'.
+
+> **Nota:** Al realizar cambios en el esquema SQL, primero deben ejecutarse en el proyecto de `DEV` y probarse en la rama de `staging` antes de aplicarlos a `PROD`.
 ```
 
 ---

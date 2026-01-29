@@ -35,7 +35,7 @@ echo -e "${YELLOW}📋 Loading production environment...${NC}"
 export $(cat .env.production | grep -v '#' | xargs)
 
 # Validate required variables
-REQUIRED_VARS=("VITE_SUPABASE_URL" "VITE_SUPABASE_ANON_KEY" "VITE_JWT_SECRET")
+REQUIRED_VARS=("VITE_SUPABASE_URL" "VITE_SUPABASE_ANON_KEY" "SUPABASE_JWT_SECRET" "SUPABASE_SERVICE_ROLE_KEY")
 for var in "${REQUIRED_VARS[@]}"; do
     if [ -z "${!var}" ]; then
         echo -e "${RED}❌ ERROR: $var not set in .env.production${NC}"
@@ -46,10 +46,10 @@ done
 echo -e "${GREEN}✅ Environment variables validated${NC}\n"
 
 # Step 1: Generate JWT_SECRET if needed
-if [ "${#VITE_JWT_SECRET}" -lt 32 ]; then
+if [ "${#SUPABASE_JWT_SECRET}" -lt 32 ]; then
     echo -e "${YELLOW}🔐 Generating new JWT_SECRET...${NC}"
     JWT_SECRET=$(openssl rand -base64 32)
-    echo "VITE_JWT_SECRET=$JWT_SECRET" >> .env.production
+    echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> .env.production
     echo -e "${GREEN}✅ JWT_SECRET generated and saved to .env.production${NC}\n"
 fi
 
@@ -82,11 +82,11 @@ echo -e "${YELLOW}Or manually execute: docs/production-rls-policies.sql${NC}\n"
 echo -e "${YELLOW}📝 IMPORTANT: Set JWT_SECRET in Supabase Edge Function secret...${NC}"
 echo ""
 echo "Run this command:"
-echo "supabase secrets set JWT_SECRET=$VITE_JWT_SECRET --project-id <project-id>"
+echo "supabase secrets set JWT_SECRET=$SUPABASE_JWT_SECRET --project-id <project-id>"
 echo ""
 echo -e "${YELLOW}Or in Supabase Dashboard:${NC}"
 echo "1. Go to Project Settings > Edge Functions > Secrets"
-echo "2. Add new secret: JWT_SECRET = $VITE_JWT_SECRET"
+echo "2. Add new secret: JWT_SECRET = $SUPABASE_JWT_SECRET"
 echo ""
 
 # Step 7: Setup production npm script

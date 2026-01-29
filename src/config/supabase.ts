@@ -13,12 +13,18 @@ import { getStoredToken } from '@/services/jwtService'
 
 // Supabase configuration
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim()
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim()
+const environment = import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development'
 
 // Verificar que las variables estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ CRÍTICO: Supabase no está configurado. Verifica VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en tu .env.local o Vercel.')
+  const missing = !supabaseUrl ? 'VITE_SUPABASE_URL' : 'VITE_SUPABASE_ANON_KEY'
+  console.error(`❌ CRÍTICO [${environment.toUpperCase()}]: Falta la variable ${missing}.`)
+  console.info(`💡 Tip: Revisa tu archivo .env.${environment === 'development' ? 'local' : environment} o las variables en Vercel.`)
+} else {
+  // Log informativo premium con estilo para la consola
+  console.log(`%c🌐 Reisbloc POS %c Conectado a: ${environment.toUpperCase()}`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;')
 }
 
 // Create Supabase client
@@ -67,9 +73,9 @@ export async function setAuthToken(token: string | null) {
 
 // Feature flags para migración gradual
 export const SUPABASE_FEATURES = {
-  AUTH_ENABLED: true,
-  DATABASE_ENABLED: true,
-  STORAGE_ENABLED: true
+  AUTH_ENABLED: import.meta.env.VITE_SUPABASE_AUTH_ENABLED === 'true',
+  DATABASE_ENABLED: import.meta.env.VITE_SUPABASE_DB_ENABLED === 'true',
+  STORAGE_ENABLED: import.meta.env.VITE_SUPABASE_STORAGE_ENABLED === 'true'
 }
 
 // Helper para verificar si Supabase está disponible
