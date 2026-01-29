@@ -54,13 +54,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Inicializar el estado de autenticación si existe un token guardado
 const initialToken = getStoredToken()?.accessToken;
-if (initialToken) {
+if (initialToken && initialToken.split('.').length === 3) {
+  // Solo aplicamos el token si parece un JWT válido (3 partes separadas por puntos)
   supabase.functions.setAuth(initialToken);
   // Establecemos la sesión inicial para que las políticas RLS funcionen desde el primer render
-  supabase.auth.setSession({
+  void supabase.auth.setSession({
     access_token: initialToken,
     refresh_token: initialToken
-  }).catch(err => console.error('Error setting initial session:', err));
+  });
 }
 
 // Actualizar token cuando cambie

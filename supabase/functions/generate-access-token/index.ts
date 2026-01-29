@@ -40,14 +40,25 @@ async function generateAccessToken(userId: string, role: string, deviceId: strin
 serve(async (req: Request) => {
   // Manejo de CORS (Pre-flight)
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders, status: 200 });
   }
 
   try {
-    const body = await req.json();
-    const { userId, role, deviceId } = body as { userId: string, role: string, deviceId: string };
+    // Intentar leer el body de forma segura
+    const body = await req.json().catch(() => null);
     
-    console.log(`Generating token for user: ${userId}, role: ${role}`);
+    if (!body) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const userId = body.userId || body.user_id;
+    const role = body.role;
+    const deviceId = body.deviceId || body.device_id;
+    
+    console.log(`[AUTH] Solicitud de token para usuario: ${userId}, rol: ${role}`);
 
     if (!userId || !role || !deviceId) {
       return new Response(JSON.stringify({ error: 'Missing fields', received: body }), {
