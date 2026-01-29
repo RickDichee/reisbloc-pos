@@ -25,7 +25,7 @@ async function generateAccessToken(userId: string, role: string, deviceId: strin
     iat: now,
     exp: now + JWT_EXPIRY
   }));
-  
+
   const message = `${header}.${claims}`;
   const key = await crypto.subtle.importKey(
     'raw',
@@ -34,7 +34,7 @@ async function generateAccessToken(userId: string, role: string, deviceId: strin
     false,
     ['sign']
   );
-  
+
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
   const signature = encodeBase64Url(new Uint8Array(sig));
   return `${message}.${signature}`;
