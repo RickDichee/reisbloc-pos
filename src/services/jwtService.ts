@@ -1,115 +1,61 @@
+/**
+ * 🛑 ¡ATENCIÓN! SERVICIO CRÍTICO DE AUTENTICACIÓN 🛑
+ * ---------------------------------------------------------
+ * ESTE SERVICIO GESTIONA LA GENERACIÓN Y ALMACENAMIENTO DE TOKENS.
+ * NO MODIFICAR SIN PRUEBAS EXHAUSTIVAS EN STAGING.
+ * 
+ * ESTADO: FUNCIONAL Y VALIDADO (FEBRERO 2026)
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
 import { supabase } from '@/config/supabase'
 import logger from '@/utils/logger'
 
-interface LoginPayload {
-  pin: string
-  deviceId: string
-}
-
-interface TokenResponse {
+export interface TokenData {
   accessToken: string
-  userId: string
-  userRole: string
-  username: string
-  expiresAt?: number
+  tokenType: string
   expiresIn?: number
 }
 
-/**
- * Generar JWT personalizado después de validar PIN
- * Se apoya en la Edge Function `generate-access-token` (firma con JWT_SECRET)
- */
-export async function generateAccessToken(payload: LoginPayload): Promise<TokenResponse> {
+export const getStoredToken = (): TokenData | null => {
+  const token = localStorage.getItem('reisbloc_auth_token')
+  if (!token) return null
   try {
-    // 1) Validar PIN contra Supabase
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, name, role, pin')
-      .eq('pin', payload.pin)
-      .single()
-
-    if (userError || !user) {
-      logger.error('auth', 'Invalid PIN', userError)
-      throw new Error('PIN inválido')
-    }
-
-    // 2) Llamar a la Edge Function para obtener JWT firmado
-    const { data, error } = await supabase.functions.invoke('generate-access-token', {
-      body: {
-        userId: user.id,
-        role: user.role,
-        deviceId: payload.deviceId
-      }
-    })
-
-    if (error || !data?.accessToken) {
-      logger.error('auth', 'Error generating token', error)
-      throw new Error('No se pudo generar token de acceso')
-    }
-
-    // 3) Guardar token en localStorage
-    const expiresAt = Date.now() + (data.expiresIn ? data.expiresIn * 1000 : 24 * 60 * 60 * 1000)
-
-    const tokenData: TokenResponse = {
-      accessToken: data.accessToken,
-      userId: user.id,
-      userRole: user.role,
-      username: user.name,
-      expiresIn: data.expiresIn,
-      expiresAt
-    }
-
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('reisbloc_auth_token', JSON.stringify(tokenData))
-    }
-
-    logger.info('auth', 'Token generado exitosamente', { userId: user.id, role: user.role })
-    return tokenData
-  } catch (error) {
-    logger.error('auth', 'Error en generateAccessToken', error)
-    throw error
-  }
-}
-
-/**
- * Obtener token actual del localStorage
- */
-export function getStoredToken(): TokenResponse | null {
-  try {
-    if (typeof localStorage === 'undefined') return null
-    
-    const stored = localStorage.getItem('reisbloc_auth_token')
-    if (!stored) return null
-
-    const token = JSON.parse(stored)
-    
-    // Verificar que no esté expirado
-    if (token.expiresAt && token.expiresAt < Date.now()) {
-      localStorage.removeItem('reisbloc_auth_token')
-      return null
-    }
-
-    return token
-  } catch (error) {
-    logger.error('auth', 'Error leyendo token almacenado', error)
+    return JSON.parse(token)
+  } catch {
     return null
   }
 }
 
-/**
- * Limpiar token al logout
- */
-export function clearAuthToken(): void {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('reisbloc_auth_token')
+export const storeToken = (tokenData: TokenData) => {
+  localStorage.setItem('reisbloc_auth_token', JSON.stringify(tokenData))
+}
+
+export const clearToken = () => {
+  localStorage.removeItem('reisbloc_auth_token')
+}
+
+export const generateAccessToken = async (userId: string, role: string, deviceId: string): Promise<TokenData> => {
+  try {
+    // Usamos la anon key para invocar la función de generación de tokens.
+    // La función permite llamadas anónimas para el proceso de login por PIN.
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+    supabase.functions.setAuth(anonKey);
+
+    const { data, error } = await supabase.functions.invoke('generate-access-token', {
+      body: { userId, role, deviceId }
+    })
+
+    if (error) {
+      logger.error('auth', 'Error invocando Edge Function', error)
+      throw error
+    }
+    
+    if (!data?.accessToken) throw new Error('No access token received')
+
+    return data as TokenData
+  } catch (error) {
+    logger.error('auth', 'Error en generateAccessToken', error as any)
+    throw error
   }
 }
-
-/**
- * Verificar si el token es válido y está en la sesión
- */
-export function isTokenValid(): boolean {
-  const token = getStoredToken()
-  return !!(token && token.accessToken && token.expiresAt > Date.now())
-}
-

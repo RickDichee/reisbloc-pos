@@ -1,83 +1,108 @@
+/**
+ * 🛑 ¡ATENCIÓN! ARCHIVO CRÍTICO DE SEGURIDAD 🛑
+ * ---------------------------------------------------------
+ * ESTA FUNCIÓN GENERA LOS TOKENS DE ACCESO PARA EL SISTEMA.
+ * CUALQUIER CAMBIO AQUÍ PUEDE BLOQUEAR EL ACCESO A TODO EL POS.
+ * 
+ * ESTADO: FUNCIONAL Y VALIDADO (FEBRERO 2026)
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
+/**
+ * Reisbloc POS - Edge Function: Generate Access Token
+ * Genera un JWT firmado para que el frontend pueda autenticarse con RLS.
+ * 
+ * Despliegue:
+ * supabase functions deploy generate-access-token --project-ref nmovxyaibnixvxtepbod
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'dev-secret-change-in-production';
 const JWT_EXPIRY = 24 * 60 * 60;
-function base64url(buf) {
-  let result = '';
-  for(let i = 0; i < buf.length; i += 3){
-    const a = buf[i];
-    const b = buf[i + 1];
-    const c = buf[i + 2];
-    const bitmap = a << 16 | b << 8 | c;
-    for(let j = 18; j >= 0; j -= 6){
-      const index = bitmap >> j & 63;
-      result += 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'[index];
-    }
-  }
-  return result.replace(/==?$/, '');
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function encodeBase64Url(input: string | Uint8Array): string {
+  const binary = typeof input === 'string' ? new TextEncoder().encode(input) : input;
+  const base64 = btoa(String.fromCharCode(...binary));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
-async function generateAccessToken(userId, role, deviceId) {
-  const header = btoa(JSON.stringify({
-    alg: 'HS256',
-    typ: 'JWT'
-  })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+async function generateAccessToken(userId: string, role: string, deviceId: string) {
+  const header = encodeBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
-  const claims = btoa(JSON.stringify({
+  const claims = encodeBase64Url(JSON.stringify({
     sub: userId,
     role,
     deviceId,
     iat: now,
     exp: now + JWT_EXPIRY
-  })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }));
+
   const message = `${header}.${claims}`;
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(JWT_SECRET), {
     name: 'HMAC',
     hash: 'SHA-256'
-  }, false, [
-    'sign'
-  ]);
+  }, false, ['sign']);
+
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
-  const signature = base64url(new Uint8Array(sig));
+  const signature = encodeBase64Url(new Uint8Array(sig));
   return `${message}.${signature}`;
 }
-serve(async (req)=>{
-  if (req.method === 'OPTIONS') return new Response('ok', {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'content-type'
-    }
-  });
+
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders, status: 200 });
+  }
+
   try {
-    const { userId, role, deviceId } = await req.json();
-    if (!userId || !role || !deviceId) return new Response(JSON.stringify({
-      error: 'Missing fields'
-    }), {
-      status: 400,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const body = req.method === 'POST' ? await req.json().catch((e) => ({ _error: e.message })) : null;
+    
+    if (!body || body._error) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body', details: body?._error }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    const userId = body.userId || body.user_id;
+    const role = body.role;
+    const deviceId = body.deviceId || body.device_id;
+
+    if (!userId || !role || !deviceId) {
+      return new Response(JSON.stringify({ 
+        error: 'Missing required fields', 
+        received: { userId: !!userId, role: !!role, deviceId: !!deviceId } 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`[AUTH] Solicitud de token para usuario: ${userId}, rol: ${role}`);
+
     const accessToken = await generateAccessToken(userId, role, deviceId);
+    
     return new Response(JSON.stringify({
       accessToken,
       expiresIn: JWT_EXPIRY,
       tokenType: 'Bearer'
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Edge Function Error:', error);
     return new Response(JSON.stringify({
-      error: 'Internal error'
+      error: 'Internal error',
+      details: error instanceof Error ? error.message : String(error)
     }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });

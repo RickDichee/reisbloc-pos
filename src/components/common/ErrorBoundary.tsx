@@ -85,6 +85,20 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
 // Función para manejar errores capturados
 function onError(error: Error, info: { componentStack: string }) {
   errorCount++
+
+  // Detectar error de carga de módulos (común tras un nuevo deploy en Vercel)
+  const errorStr = error?.message || String(error);
+  if (
+    errorStr.includes('Failed to fetch dynamically imported module') || 
+    errorStr.includes('Load chunk') ||
+    errorStr.includes('Importing a module script failed')
+  ) {
+    logger.warn('error-boundary', 'Detectado error de despliegue (chunk mismatch). Recargando app...');
+    // Pequeño delay para asegurar que el log se envíe antes de recargar
+    setTimeout(() => window.location.reload(), 100);
+    return
+  }
+
   logger.error('error-boundary', 'Error capturado por ErrorBoundary', { 
     error, 
     componentStack: info.componentStack,

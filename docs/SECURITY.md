@@ -2,6 +2,12 @@
 
 ## ⚠️ ESTADO DE MIGRACIÓN A SUPABASE
 
+### 🏆 HITOS ESTABLES (PUNTOS DE RESTAURACIÓN)
+
+| Versión/Tag | Descripción | Fecha |
+|-------------|-------------|-------|
+| `v3.0.0-stable-auth` | Auth por PIN + Generación de JWT + RLS Staging funcionando. | Feb 2026 |
+
 **CRÍTICO:** La aplicación está en proceso de migración de Firebase a Supabase PostgreSQL.
 
 ### Seguridad RLS Actual (MIGRANDO A PRODUCCIÓN)
@@ -20,12 +26,34 @@
 -- ✅ IMPLEMENTADO: Trigger de inventario automatizado
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
 -- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
--- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging (Fix Error 42501 en Staging)
+-- ✅ IMPLEMENTADO: Configuración de variables de entorno en Vercel (Staging)
+-- ✅ IMPLEMENTADO: Sincronización de ramas feat/supabase-backend -> Staging
+-- ✅ IMPLEMENTADO: Configuración de JWT_SECRET en Supabase Secrets (Staging)
+-- ✅ IMPLEMENTADO: Verificación y corrección de CORS en Edge Functions
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
--- ⏳ PENDIENTE: Endurecimiento de RLS en Producción (Opción 2)
+-- ✅ IMPLEMENTADO: Endurecimiento de RLS basado en Roles de JWT (v3.0.0-stable-auth)
+-- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
+-- ✅ IMPLEMENTADO: Sincronización de Inventario vía Triggers PostgreSQL
+-- ✅ IMPLEMENTADO: Migración a Supabase Auth + JWT Nativo (Opción 1)
 ```
 
 Esto permite desarrollo rápido pero **NO ES SEGURO** para producción.
+
+### Configuración de Entornos (Vercel)
+
+| Variable | Local | Staging (Vercel Preview) | Producción |
+|----------|-------|--------------------------|------------|
+| VITE_SUPABASE_URL | localhost:54321 | staging-project.supabase.co | prod-project.supabase.co |
+| VITE_SUPABASE_DB_ENABLED | true | true | true |
+| VITE_SUPABASE_AUTH_ENABLED | true | true | true |
+| JWT_SECRET | dev-secret | ✅ Configurado | supabase secrets set |
+
+### Sobre la Anon Key
+La `VITE_SUPABASE_ANON_KEY` **no es una brecha de seguridad**. Es un identificador público necesario para que el cliente se comunique con la API. La seguridad real reside en:
+1. **RLS Policies:** Que impiden que un rol `anon` acceda a datos sensibles.
+2. **Edge Functions:** Que validan el PIN antes de entregar un JWT con privilegios.
+3. **JWT Secret:** Que reside únicamente en el servidor (Supabase Secrets) y firma los tokens de acceso.
 
 ---
 

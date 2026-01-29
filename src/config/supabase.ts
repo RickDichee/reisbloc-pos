@@ -1,4 +1,14 @@
 /**
+ * 🛑 ¡ATENCIÓN! ARCHIVO CRÍTICO DE CONFIGURACIÓN 🛑
+ * ---------------------------------------------------------
+ * ESTE ARCHIVO ES FUNDAMENTAL PARA LA CONEXIÓN CON SUPABASE.
+ * NO MODIFICAR SIN PRUEBAS EXHAUSTIVAS EN STAGING.
+ * 
+ * ESTADO: FUNCIONAL Y VALIDADO (FEBRERO 2026)
+ * PUNTO DE RESTAURACIÓN: v3.0.0-stable-auth
+ * ---------------------------------------------------------
+ */
+/**
  * Reisbloc POS - Sistema POS Profesional
  * Copyright (C) 2026 Reisbloc Lab
  * 
@@ -11,20 +21,35 @@
 import { createClient } from '@supabase/supabase-js'
 import { getStoredToken } from '@/services/jwtService'
 
-// Supabase configuration
+// Configuración de Supabase
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://missing-project.supabase.co').trim()
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || 'missing-key').trim()
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim()
-const environment = import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development'
+// Detectamos staging si estamos en una URL de preview de Vercel o si la variable está explícita
+const getEnvironment = () => {
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const envVar = import.meta.env.VITE_ENVIRONMENT?.toLowerCase();
+
+  if (envVar) return envVar;
+  if (hostname.includes('-preview') || hostname.includes('staging')) return 'staging';
+  if (hostname.includes('vercel.app')) return 'staging';
+  return import.meta.env.MODE;
+};
+
+const environment = getEnvironment();
 
 // Verificar que las variables estén configuradas
-if (!supabaseUrl || !supabaseAnonKey) {
-  const missing = !supabaseUrl ? 'VITE_SUPABASE_URL' : 'VITE_SUPABASE_ANON_KEY'
-  console.error(`❌ CRÍTICO [${environment.toUpperCase()}]: Falta la variable ${missing}.`)
+if (supabaseUrl.includes('missing') || supabaseAnonKey.includes('missing')) {
+  const missing = supabaseUrl.includes('missing') ? 'VITE_SUPABASE_URL' : 'VITE_SUPABASE_ANON_KEY'
+  console.error(`❌ CRÍTICO [${environment.toUpperCase()}]: Falta la variable ${missing}. Revisa Vercel Settings.`)
   console.info(`💡 Tip: Revisa tu archivo .env.${environment === 'development' ? 'local' : environment} o las variables en Vercel.`)
 } else {
+  // Verificación de seguridad de la llave
+  const isServiceKey = supabaseAnonKey.includes('service_role');
+  const statusEmoji = isServiceKey ? '⚠️ PELIGRO: USANDO SERVICE_ROLE' : '✅';
+  
   // Log informativo premium con estilo para la consola
-  console.log(`%c🌐 Reisbloc POS %c Conectado a: ${environment.toUpperCase()}`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;')
+  console.log(`%c🌐 Reisbloc POS %c ${statusEmoji} ${environment.toUpperCase()} %c ${supabaseUrl.substring(0, 20)}...`, 'background: #4f46e5; color: white; padding: 2px 5px; border-radius: 3px;', 'color: #4f46e5; font-weight: bold;', 'color: #666; font-style: italic;')
 }
 
 // Create Supabase client
@@ -44,24 +69,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Interceptor para agregar JWT personalizado a cada request
-// Esto permite que RLS valide el token
-supabase.realtime.setAuth(getStoredToken()?.accessToken || null)
-
 // Actualizar token cuando cambie
 export async function setAuthToken(token: string | null) {
+  // Con Supabase Auth, este método es opcional ya que el SDK maneja la sesión,
+  // pero lo mantenemos para compatibilidad con Edge Functions si fuera necesario.
   try {
     if (!token) {
-      supabase.realtime.setAuth(null)
       await supabase.auth.signOut()
       return
     }
 
-    // Aplicar token en Realtime y Functions
-    supabase.realtime.setAuth(token)
-    supabase.functions.setAuth?.(token)
+    // Aplicar token a las llamadas de Edge Functions
+    supabase.functions.setAuth(token)
 
     // Establecer sesión para que todas las llamadas HTTP usen el JWT
+    // Esto actualiza automáticamente los encabezados de autorización
     await supabase.auth.setSession({
       access_token: token,
       refresh_token: token
@@ -82,5 +104,4 @@ export const SUPABASE_FEATURES = {
 export const isSupabaseAvailable = (): boolean => {
   return !!(supabaseUrl && supabaseAnonKey)
 }
-
 export default supabase
