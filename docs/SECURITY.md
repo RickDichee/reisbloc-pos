@@ -19,6 +19,9 @@
 -- ✅ IMPLEMENTADO: Estandarización forzada de nombres a snake_case (Fix Error 42703 - Final)
 -- ✅ IMPLEMENTADO: Trigger de inventario automatizado
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
+-- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo (Products/Sales/Orders)
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo (Products/Sales/Orders)
 ```
 
 Esto permite desarrollo rápido pero **NO ES SEGURO** para producción.
