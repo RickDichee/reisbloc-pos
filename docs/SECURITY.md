@@ -20,7 +20,9 @@
 -- ✅ IMPLEMENTADO: Trigger de inventario automatizado
 -- ✅ IMPLEMENTADO: RLS restrictivo para la tabla sales (Fix Error 42501)
 -- ✅ IMPLEMENTADO: Despliegue de Edge Function 'generate-access-token' en Staging
--- ✅ IMPLEMENTADO: RLS permisivo en Staging para desbloqueo de Demo
+-- ✅ IMPLEMENTADO: RLS permisivo en Staging (Fix Error 42501 en Staging)
+-- ✅ IMPLEMENTADO: Sincronización de ramas Master -> Staging
+-- ⏳ PENDIENTE: Verificación de CORS en Edge Functions
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
 -- ⏳ PENDIENTE: Endurecimiento de RLS en Producción (Opción 2)
 ```

@@ -2,6 +2,7 @@ import { supabase } from '@/config/supabase'
 import logger from '@/utils/logger'
 
 interface LoginPayload {
+  userId: string
   pin: string
   deviceId: string
 }
@@ -25,6 +26,7 @@ export async function generateAccessToken(payload: LoginPayload): Promise<TokenR
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, name, role, pin')
+      .eq('id', payload.userId)
       .eq('pin', payload.pin)
       .single()
 
@@ -112,4 +114,3 @@ export function isTokenValid(): boolean {
   const token = getStoredToken()
   return !!(token && token.accessToken && token.expiresAt > Date.now())
 }
-

@@ -1,5 +1,6 @@
 # Variables de entorno
 .env*
+.env.staging
 node_modules/
 
 # Build outputs
