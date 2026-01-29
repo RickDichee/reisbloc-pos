@@ -87,10 +87,15 @@ function onError(error: Error, info: { componentStack: string }) {
   errorCount++
 
   // Detectar error de carga de módulos (común tras un nuevo deploy en Vercel)
-  if (error.message?.includes('Failed to fetch dynamically imported module') || 
-      error.message?.includes('Load chunk')) {
-    logger.warn('error-boundary', 'Detectado error de carga de módulo. Recargando para obtener nueva versión...')
-    window.location.reload()
+  const errorStr = error?.message || String(error);
+  if (
+    errorStr.includes('Failed to fetch dynamically imported module') || 
+    errorStr.includes('Load chunk') ||
+    errorStr.includes('Importing a module script failed')
+  ) {
+    logger.warn('error-boundary', 'Detectado error de despliegue (chunk mismatch). Recargando app...');
+    // Pequeño delay para asegurar que el log se envíe antes de recargar
+    setTimeout(() => window.location.reload(), 100);
     return
   }
 

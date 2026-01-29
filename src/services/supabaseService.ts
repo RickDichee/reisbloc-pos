@@ -88,16 +88,13 @@ class SupabaseService {
 
   async getAllUsers(): Promise<User[]> {
     return this.withRetry(async () => {
-      console.log('🔍 [Supabase] Obteniendo usuarios...')
+      logger.info('supabase', '🔍 Obteniendo usuarios...')
       
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        // .eq('active', true) // Temporalmente comentado para debug
+        .eq('active', true)
         .order('name', { ascending: true })
-
-      console.log('🔍 [Supabase] Data:', data)
-      console.log('🔍 [Supabase] Error:', error)
       
       if (error) throw error
       // Map Supabase fields to TypeScript User type
@@ -341,23 +338,22 @@ class SupabaseService {
 
   async getAllProducts(): Promise<Product[]> {
     return this.withRetry(async () => {
-      console.log('🔍 [Supabase] Obteniendo productos...')
+      logger.info('supabase', '🔍 Obteniendo productos...')
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        // Temporarily remove .eq('available', true) to see all products
+        .eq('available', true)
         .order('category', { ascending: true })
         .order('name', { ascending: true })
-
-      console.log('🔍 [Supabase] Productos data:', data)
-      console.log('🔍 [Supabase] Productos error:', error)
       
       if (error) throw error
-      // Filter in memory to show active/available products
-      const products = (data || []) as Product[]
-      console.log('🔍 [Supabase] Total productos:', products.length)
-      console.log('🔍 [Supabase] Productos por estado:', products.map(p => ({ name: p.name, available: (p as any).available, active: (p as any).active })))
-      return products
+      // Mapear snake_case de DB a camelCase de TypeScript
+      return (data || []).map((p: any) => ({
+        ...p,
+        currentStock: p.current_stock,
+        hasInventory: p.has_inventory,
+        minimumStock: p.minimum_stock
+      })) as Product[]
     }).catch(error => {
       logger.error('supabase', 'Error getting products', error as any)
       return []
@@ -388,10 +384,12 @@ class SupabaseService {
         payload.available = product.active
         delete payload.active
       }
-      // Remove inventory fields not present in Supabase schema
-      if ('currentStock' in payload) delete payload.currentStock
-      if ('hasInventory' in payload) delete payload.hasInventory
-      if ('minimumStock' in payload) delete payload.minimumStock
+      
+      // Mapear campos de inventario a snake_case para PostgreSQL
+      if ('currentStock' in payload) { payload.current_stock = payload.currentStock; delete payload.currentStock; }
+      if ('hasInventory' in payload) { payload.has_inventory = payload.hasInventory; delete payload.hasInventory; }
+      if ('minimumStock' in payload) { payload.minimum_stock = payload.minimumStock; delete payload.minimumStock; }
+
       // Remove timestamp fields (Supabase handles with triggers)
       if ('createdAt' in payload) delete payload.createdAt
       if ('updatedAt' in payload) delete payload.updatedAt
@@ -418,10 +416,12 @@ class SupabaseService {
         payload.available = updates.active
         delete payload.active
       }
-      // Remove inventory fields not present in Supabase schema
-      if ('currentStock' in payload) delete payload.currentStock
-      if ('hasInventory' in payload) delete payload.hasInventory
-      if ('minimumStock' in payload) delete payload.minimumStock
+
+      // Mapear campos de inventario a snake_case para PostgreSQL
+      if ('currentStock' in payload) { payload.current_stock = payload.currentStock; delete payload.currentStock; }
+      if ('hasInventory' in payload) { payload.has_inventory = payload.hasInventory; delete payload.hasInventory; }
+      if ('minimumStock' in payload) { payload.minimum_stock = payload.minimumStock; delete payload.minimumStock; }
+
       // Remove timestamp fields (Supabase handles with triggers)
       if ('createdAt' in payload) delete payload.createdAt
       if ('updatedAt' in payload) delete payload.updatedAt
@@ -439,11 +439,17 @@ class SupabaseService {
   }
 
   async updateProductStockBatch(updates: { productId: string; quantity: number }[]): Promise<void> {
-    // Inventory columns (currentStock, hasInventory) no existen en Supabase schema actual
-    // No-op temporal para evitar errores hasta definir esquema de inventario en Supabase
-    if (!updates.length) return
-    logger.warn('supabase', 'updateProductStockBatch omitido: inventario no habilitado en Supabase schema')
-    return
+    try {
+      if (!updates.length) return
+      const { error } = await supabase.rpc('update_stock_batch', { 
+        updates: updates.map(u => ({ id: u.productId, qty: u.quantity })) 
+      })
+      if (error) throw error
+      logger.info('supabase', `✅ Stock actualizado para ${updates.length} productos`)
+    } catch (error) {
+      logger.error('supabase', 'Error updating product stock batch', error as any)
+      throw error
+    }
   }
 
   async deleteProduct(productId: string): Promise<void> {
@@ -729,6 +735,15 @@ class SupabaseService {
         .insert([payload])
 
       if (error) {
+        // Diagnóstico de RLS
+        if (error.code === '42501') {
+          const { data: session } = await supabase.auth.getSession();
+          logger.error('supabase', '❌ Error de Permisos (RLS):', {
+            hasSession: !!session?.session,
+            role: session?.session?.user?.role || 'anon',
+            hint: 'Si el rol es anon, el JWT no se aplicó correctamente.'
+          });
+        }
         logger.error('supabase', '❌ Supabase insert error:', {
           code: error.code,
           message: error.message,

@@ -34,7 +34,8 @@
 -- ✅ IMPLEMENTADO: Sincronización de entornos (Local, Staging, Prod)
 -- ✅ IMPLEMENTADO: Endurecimiento de RLS basado en Roles de JWT (v3.0.0-stable-auth)
 -- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
--- ✅ IMPLEMENTADO: Validación de Roles RLS en Staging (Zero Trust)
+-- ✅ IMPLEMENTADO: Sincronización de Inventario vía Triggers PostgreSQL
+-- ✅ IMPLEMENTADO: Sincronización de Inventario vía Triggers PostgreSQL
 ```
 
 Esto permite desarrollo rápido pero **NO ES SEGURO** para producción.

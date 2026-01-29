@@ -60,16 +60,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const body = await req.json().catch(() => null);
-    if (!body) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { 
+    const body = req.method === 'POST' ? await req.json().catch((e) => ({ _error: e.message })) : null;
+    
+    if (!body || body._error) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body', details: body?._error }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -80,7 +74,10 @@ serve(async (req: Request) => {
     const deviceId = body.deviceId || body.device_id;
 
     if (!userId || !role || !deviceId) {
-      return new Response(JSON.stringify({ error: 'Missing fields', received: body }), {
+      return new Response(JSON.stringify({ 
+        error: 'Missing required fields', 
+        received: { userId: !!userId, role: !!role, deviceId: !!deviceId } 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
