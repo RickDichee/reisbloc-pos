@@ -1,0 +1,40 @@
+# Variables de entorno
+.env*
+node_modules/
+
+# Build outputs
+dist/
+
+# Backups and data
+backups/
+
+# IDE
+.DS_Store
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+
+# Temp files
+*.pid
+.cache/
+
+# Android / Capacitor
+android/app/build/
+android/app/release/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+
+# Keystore (NUNCA commitear)
+*.keystore
+*.jks
+*-key.properties
+
+# Android Studio
+.idea/
+*.iml
+
+.vercel

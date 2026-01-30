@@ -22,9 +22,9 @@ import NavBar from '@/components/layout/NavBar'
 import OfflineIndicator from '@/components/common/OfflineIndicator'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { useNotifications } from '@/hooks/useNotifications'
-import { Bell, Share, PlusSquare } from 'lucide-react'
+import { Bell, Share, PlusSquare, X, Loader2 } from 'lucide-react'
+import { LoginPin } from '@/components/auth/LoginPin'
 
-const Login = lazy(() => import('@/pages/Login'))
 const POS = lazy(() => import('@/pages/POS'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const Reports = lazy(() => import('@/pages/Reports'))
@@ -37,8 +37,7 @@ const Closing = lazy(() => import('@/pages/Closing'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 function App() {
-  const { isAuthenticated, currentUser } = useAppStore()
-  const { currentDevice } = useAppStore.getState()
+  const { isAuthenticated, currentUser, currentDevice } = useAppStore()
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false)
   const [showIOSPrompt, setShowIOSPrompt] = useState(false)
 
@@ -89,7 +88,8 @@ function App() {
     >
       <ToastProvider>
         <div className="relative">
-          <NavBar />
+          {/* Solo mostrar NavBar si está autenticado y el dispositivo está aprobado */}
+          {isAuthenticated && !needsDeviceApproval && <NavBar />}
 
           {/* OfflineIndicator - mostrar siempre cuando está offline */}
           <OfflineIndicator />
@@ -139,17 +139,21 @@ function App() {
                 <p>Toca <Share className="inline w-3 h-3" /> y luego <PlusSquare className="inline w-3 h-3" /> "Añadir a inicio" para pantalla completa.</p>
               </div>
               <button onClick={() => setShowIOSPrompt(false)} className="text-white/60 hover:text-white">
-                <Bell className="w-4 h-4 rotate-45" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        <Suspense fallback={<div className="p-6 text-center text-gray-600">Cargando...</div>}>
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          </div>
+        }>
           <Routes>
             {!isAuthenticated ? (
               <>
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<LoginPin />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </>
             ) : needsDeviceApproval ? (
@@ -164,7 +168,7 @@ function App() {
                 <Route path="/ready" element={<OrdersToServe />} />
                 <Route path="/kitchen" element={<Kitchen />} />
                 <Route path="/bar" element={<Bar />} />
-                <Route path="/kitchen-dashboard" element={['admin', 'capitan', 'cocina', 'bar'].includes(currentUser?.role || '') ? <KitchenDashboard /> : <Navigate to="/pos" />} />
+                <Route path="/kitchen-dashboard" element={['admin', 'capitan', 'cocina', 'bar', 'supervisor'].includes(currentUser?.role || '') ? <KitchenDashboard /> : <Navigate to="/pos" />} />
                 <Route path="/admin" element={currentUser?.role === 'admin' ? <Admin /> : <Navigate to="/pos" />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/closing" element={currentUser?.role === 'admin' ? <Closing /> : <Navigate to="/pos" />} />

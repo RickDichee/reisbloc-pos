@@ -1,5 +1,12 @@
 # Variables de entorno
 .env*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.production
 node_modules/
 
 # Build outputs

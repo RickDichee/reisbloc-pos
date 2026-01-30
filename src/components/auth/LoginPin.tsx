@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { Lock, Loader } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAppStore } from '../../store/appStore';
+import { Lock, Loader, UserCheck } from 'lucide-react';
 
 /**
  * LoginPin Component
@@ -16,12 +17,28 @@ import { Lock, Loader } from 'lucide-react';
 
 export const LoginPin: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loading, error: authError } = useAuth();
+  const { setAuthenticated, setCurrentUser, setCurrentDevice } = useAppStore();
   
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+
+  // Manejo de bloqueo temporal por intentos fallidos
+  useEffect(() => {
+    if (lockoutUntil) {
+      const now = Date.now();
+      if (now < lockoutUntil) {
+        const timer = setTimeout(() => setLockoutUntil(null), lockoutUntil - now);
+        return () => clearTimeout(timer);
+      } else {
+        setLockoutUntil(null);
+      }
+    }
+  }, [lockoutUntil]);
   
   // Limpiar errores cuando el usuario escriba
   useEffect(() => {
@@ -50,6 +67,12 @@ export const LoginPin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+      setError(`Demasiados intentos. Bloqueado por ${remaining}s`);
+      return;
+    }
+
     // Validación básica
     if (!pin) {
       setError('Por favor ingresa tu PIN');
@@ -61,27 +84,118 @@ export const LoginPin: React.FC = () => {
       return;
     }
     
-    setIsValidating(true);
+    setLoading(true);
+    setError('');
     
     try {
-      // Llamar al hook de autenticación
-      const success = await login(pin);
+      // Lógica integrada: Consulta a Supabase validando PIN y estado activo
+      const { data, error: sbError } = await supabase
+        .from('users')
+        .select('id, username, role, rol, active, nombre, pin, establishment_id')
+        .eq('pin', pin)
+        .single();
+
+      if (sbError) {
+        console.error('Error de Supabase:', sbError);
+        throw new Error('PIN incorrecto o error de conexión');
+      }
       
-      if (success) {
-        // Mostrar feedback visual antes de navegar
-        console.log('✅ Login exitoso, redirigiendo...');
-        // La navegación se maneja en el hook
-        navigate('/pos');
-      } else {
-        setError('PIN incorrecto. Intenta de nuevo.');
-        setPin('');
+      if (!data) {
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        
+        if (newAttempts >= 3) {
+          setLockoutUntil(Date.now() + 60000); // 1 minuto de bloqueo
+          setAttempts(0);
+          throw new Error('Demasiados intentos fallidos. Bloqueado por 1 minuto.');
+        }
+        throw new Error('PIN incorrecto');
+      }
+      
+      if (!data.active) {
+        throw new Error('Tu cuenta está desactivada. Contacta al administrador.');
+      }
+      
+      if (data) {
+        // Efecto de sonido y visual de éxito
+        setIsSuccess(true);
+        setAttempts(0);
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        audio.volume = 0.4;
+        audio.play().catch(() => console.log('Audio blocked by browser'));
+
+        // --- Lógica de Registro de Dispositivo ---
+        const userAgent = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+        const isAndroid = /Android/.test(userAgent);
+        const deviceName = isIOS ? 'iOS Device' : isAndroid ? 'Android Device' : 'Desktop Browser';
+        
+        // Generamos un fingerprint básico basado en el navegador (seguro para caracteres especiales)
+        const fingerprint = btoa(unescape(encodeURIComponent(userAgent + screen.width + screen.height))).substring(0, 24);
+
+        // Buscamos si este dispositivo ya existe para este usuario
+        const { data: deviceData, error: deviceError } = await supabase
+          .from('devices')
+          .select('*')
+          .eq('user_id', data.id)
+          .eq('mac_address', fingerprint) // Usamos el fingerprint como mac_address temporal
+          .single();
+
+        let finalDevice = deviceData;
+
+        if (!deviceData && (!deviceError || deviceError.code === 'PGRST116')) {
+          // Si no existe, lo registramos como pendiente
+          const { data: newDevice, error: insertError } = await supabase
+            .from('devices')
+            .insert([{
+              user_id: data.id,
+              device_name: deviceName,
+              mac_address: fingerprint,
+              is_approved: false,
+              last_access: new Date().toISOString(),
+              os: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Web'
+            }])
+            .select()
+            .single();
+          
+          if (!insertError) finalDevice = newDevice;
+        } else if (deviceData) {
+          // Si existe, actualizamos el último acceso
+          await supabase
+            .from('devices')
+            .update({ last_access: new Date().toISOString() })
+            .eq('id', deviceData.id);
+        }
+
+        // Mapear el dispositivo a camelCase para el store (compatibilidad con DeviceVerification)
+        const mappedDevice = finalDevice ? {
+          id: finalDevice.id,
+          userId: finalDevice.user_id,
+          deviceName: finalDevice.device_name,
+          macAddress: finalDevice.mac_address,
+          isApproved: finalDevice.is_approved,
+          lastAccess: finalDevice.last_access,
+          os: finalDevice.os
+        } : null;
+
+        // Normalizamos el rol (aseguramos que 'role' exista si viene como 'rol')
+        const userWithRole = { ...data, role: data.role || data.rol };
+        
+        // Feedback visual y auditivo antes de entrar al sistema
+        setCurrentUser(userWithRole);
+        if (mappedDevice) setCurrentDevice(mappedDevice);
+        
+        setTimeout(() => {
+          setAuthenticated(true);
+          navigate('/pos', { replace: true });
+        }, 1000);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`Error al validar: ${errorMessage}`);
-      console.error('Login error:', err);
+      setError(errorMessage);
+      setPin('');
     } finally {
-      setIsValidating(false);
+      setLoading(false);
     }
   };
 
@@ -109,8 +223,8 @@ export const LoginPin: React.FC = () => {
     setError('');
   };
 
-  const isLoading = loading || isValidating;
-  const hasError = error || authError;
+  const isLoading = loading;
+  const hasError = error;
   const isValid = pin.length >= 4;
 
   return (
@@ -124,12 +238,20 @@ export const LoginPin: React.FC = () => {
           {/* Header */}
           <div className="text-center space-y-2">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-full p-4">
-                <Lock className="text-white" size={32} />
+              <div className={`rounded-full p-4 transition-all duration-500 ${isSuccess ? 'bg-green-500 scale-110' : 'bg-gradient-to-br from-blue-600 to-blue-700'}`}>
+                {isSuccess ? (
+                  <UserCheck className="text-white animate-bounce" size={32} />
+                ) : (
+                  <Lock className="text-white" size={32} />
+                )}
               </div>
             </div>
-            <h1 className="text-3xl font-black tracking-tighter text-gray-900 uppercase">REISBLOC POS</h1>
-            <p className="text-gray-500">Ingresa tu PIN para continuar</p>
+            <h1 className="text-3xl font-black tracking-tighter text-gray-900 uppercase">
+              {isSuccess ? '¡Bienvenido!' : 'REISBLOC POS'}
+            </h1>
+            <p className="text-gray-500">
+              {isSuccess ? 'Acceso concedido...' : 'Ingresa tu PIN para continuar'}
+            </p>
           </div>
 
           {/* Formulario */}
@@ -147,20 +269,20 @@ export const LoginPin: React.FC = () => {
                   value={pin}
                   onChange={handlePinChange}
                   placeholder="••••"
-                  className={`w-full px-4 py-3 text-center text-2xl font-bold letter-spacing: 8px border-2 rounded-lg transition-all ${
+                  className={`w-full px-4 py-3 text-center text-3xl font-bold tracking-[0.5em] border-2 rounded-lg transition-all ${
                     hasError
                       ? 'border-red-500 bg-red-50 focus:border-red-600'
                       : 'border-gray-300 focus:border-blue-500 focus:bg-blue-50'
                   } focus:outline-none`}
                   autoFocus
-                  disabled={isLoading}
+                  disabled={isLoading || !!lockoutUntil}
                 />
                 {/* Botón mostrar/ocultar */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm"
-                  disabled={!pin || isLoading}
+                  disabled={!pin || isLoading || !!lockoutUntil}
                 >
                   {showPassword ? 'Ocultar' : 'Ver'}
                 </button>
@@ -181,7 +303,7 @@ export const LoginPin: React.FC = () => {
                     key={num}
                     type="button"
                     onClick={() => handleNumberClick(num.toString())}
-                    disabled={pin.length >= 6 || isLoading}
+                    disabled={pin.length >= 6 || isLoading || !!lockoutUntil}
                     className="bg-white hover:bg-blue-50 disabled:bg-gray-200 disabled:text-gray-400 text-lg font-semibold py-3 rounded border border-gray-200 transition-colors"
                   >
                     {num}
@@ -194,7 +316,7 @@ export const LoginPin: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNumberClick('0')}
-                  disabled={pin.length >= 6 || isLoading}
+                  disabled={pin.length >= 6 || isLoading || !!lockoutUntil}
                   className="col-span-1 bg-white hover:bg-blue-50 disabled:bg-gray-200 disabled:text-gray-400 text-lg font-semibold py-3 rounded border border-gray-200 transition-colors"
                 >
                   0
@@ -203,7 +325,7 @@ export const LoginPin: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleBackspace}
-                  disabled={!pin || isLoading}
+                  disabled={!pin || isLoading || !!lockoutUntil}
                   className="col-span-1 bg-white hover:bg-red-50 disabled:bg-gray-200 disabled:text-gray-400 text-lg font-semibold py-3 rounded border border-gray-200 transition-colors"
                 >
                   ← Atrás
@@ -212,7 +334,7 @@ export const LoginPin: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleClear}
-                  disabled={!pin || isLoading}
+                  disabled={!pin || isLoading || !!lockoutUntil}
                   className="col-span-1 bg-white hover:bg-orange-50 disabled:bg-gray-200 disabled:text-gray-400 text-lg font-semibold py-3 rounded border border-gray-200 transition-colors"
                 >
                   Limpiar
@@ -230,15 +352,15 @@ export const LoginPin: React.FC = () => {
             {/* Botón de Submit */}
             <button
               type="submit"
-              disabled={!isValid || isLoading}
+              disabled={!isValid || isLoading || !!lockoutUntil}
               className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
-                isValid && !isLoading
+                isValid && !isLoading && !lockoutUntil
                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg active:scale-95'
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               {isLoading && <Loader className="animate-spin" size={20} />}
-              {isLoading ? 'Validando...' : 'Ingresar'}
+              {isLoading ? 'Validando...' : lockoutUntil ? 'Bloqueado' : 'Ingresar'}
             </button>
           </form>
 
