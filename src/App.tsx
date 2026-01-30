@@ -89,7 +89,17 @@ function App() {
     >
       <ToastProvider>
         <div className="relative">
-          <NavBar />
+          {/* Indicador visual de Staging - Solo visible en desarrollo/preview */}
+          {import.meta.env.MODE !== 'production' && (
+            <div className="fixed top-0 left-0 right-0 h-1 bg-yellow-400 z-[9999] pointer-events-none opacity-60">
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-yellow-400 text-[10px] font-bold text-black px-2 py-0.5 rounded-b-md shadow-sm uppercase tracking-wider">
+                Staging Mode: {import.meta.env.VITE_SUPABASE_URL?.split('.')[0].split('//')[1] || 'Local'}
+              </div>
+            </div>
+          )}
+
+          {/* Solo mostrar NavBar si está autenticado y el dispositivo está aprobado */}
+          {isAuthenticated && !needsDeviceApproval && <NavBar />}
 
           {/* OfflineIndicator - mostrar siempre cuando está offline */}
           <OfflineIndicator />

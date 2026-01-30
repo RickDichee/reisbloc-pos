@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+<<<<<<< Updated upstream
 import { useAuth } from '../../hooks/useAuth';
 import { Lock, Loader } from 'lucide-react';
+=======
+import { supabase } from '../../config/supabase';
+import { useAppStore } from '../../store/appStore';
+import { Lock, Loader2, UserCheck } from 'lucide-react';
+>>>>>>> Stashed changes
 
 /**
  * LoginPin Component
@@ -67,6 +73,7 @@ export const LoginPin: React.FC = () => {
       // Llamar al hook de autenticación
       const success = await login(pin);
       
+<<<<<<< Updated upstream
       if (success) {
         // Mostrar feedback visual antes de navegar
         console.log('✅ Login exitoso, redirigiendo...');
@@ -75,6 +82,119 @@ export const LoginPin: React.FC = () => {
       } else {
         setError('PIN incorrecto. Intenta de nuevo.');
         setPin('');
+=======
+      if (!data) {
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        
+        if (newAttempts >= 3) {
+          setLockoutUntil(Date.now() + 60000); // 1 minuto de bloqueo
+          setAttempts(0);
+          throw new Error('Demasiados intentos fallidos. Bloqueado por 1 minuto.');
+        }
+        throw new Error('PIN incorrecto');
+      }
+      
+      if (!data.active) {
+        throw new Error('Tu cuenta está desactivada. Contacta al administrador.');
+      }
+      
+      if (data) {
+        // Efecto de sonido y visual de éxito
+        setIsSuccess(true);
+        setAttempts(0);
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        audio.volume = 0.4;
+        audio.play().catch((err) => console.warn('Audio playback failed:', err));
+
+        // --- Lógica de Registro de Dispositivo ---
+        const userAgent = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+        const isAndroid = /Android/.test(userAgent);
+        const deviceName = isIOS ? 'iOS Device' : isAndroid ? 'Android Device' : 'Desktop Browser';
+        
+        /** 
+         * TIP DE CONSISTENCIA: 
+         * Asegúrate de que la política RLS en la tabla 'devices' permita:
+         * SELECT: auth.uid() == user_id
+         * INSERT: auth.uid() == user_id
+         * UPDATE: auth.uid() == user_id (solo para last_access)
+         */
+        const deviceSpecs = [
+          userAgent,
+          screen.width,
+          screen.height,
+          screen.colorDepth,
+          navigator.language
+        ].join('|');
+        
+        // Alternativa moderna a unescape para manejar caracteres especiales en Base64
+        const fingerprint = btoa(encodeURIComponent(deviceSpecs).replace(/%([0-9A-F]{2})/g, (_, p1) => 
+          String.fromCharCode(parseInt(p1, 16))
+        )).substring(0, 24);
+
+        // Buscamos si este dispositivo ya existe para este usuario
+        const { data: deviceData, error: deviceError } = await supabase
+          .from('devices')
+          .select('*')
+          .eq('user_id', data.id)
+          .eq('mac_address', fingerprint) // Usamos el fingerprint como mac_address temporal
+          .single();
+
+        let finalDevice = deviceData;
+
+        if (!deviceData && (!deviceError || deviceError.code === 'PGRST116')) {
+          // Si no existe, lo registramos como pendiente
+          const { data: newDevice, error: insertError } = await supabase
+            .from('devices')
+            .insert([{
+              user_id: data.id,
+              device_name: deviceName,
+              mac_address: fingerprint,
+              is_approved: false,
+              last_access: new Date().toISOString(),
+              os: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Web'
+            }])
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error('Error al registrar dispositivo:', insertError);
+            // Opcional: Notificar que el dispositivo no pudo registrarse
+          } else {
+            finalDevice = newDevice;
+          }
+        } else if (deviceData) {
+          // Si existe, actualizamos el último acceso
+          await supabase
+            .from('devices')
+            .update({ last_access: new Date().toISOString() })
+            .eq('id', deviceData.id);
+        }
+
+        // Mapear el dispositivo a camelCase para el store (compatibilidad con DeviceVerification)
+        const mappedDevice = finalDevice ? {
+          id: finalDevice.id,
+          userId: finalDevice.user_id,
+          deviceName: finalDevice.device_name,
+          macAddress: finalDevice.mac_address,
+          isApproved: finalDevice.is_approved,
+          lastAccess: finalDevice.last_access,
+          os: finalDevice.os
+        } : null;
+
+        // Normalizamos el rol (aseguramos que 'role' exista si viene como 'rol')
+        const userWithRole = { ...data, role: data.role || data.rol };
+        
+        // Sincronización con el estado global y navegación
+        setCurrentUser(userWithRole);
+        if (mappedDevice) setCurrentDevice(mappedDevice);
+        
+        setTimeout(() => {
+          setAuthenticated(true);
+          navigate('/pos', { replace: true }); // Evita que el usuario regrese al login
+        }, 1000);
+>>>>>>> Stashed changes
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
