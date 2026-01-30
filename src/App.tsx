@@ -136,7 +136,7 @@ function App() {
               </div>
               <div className="flex-1 text-xs">
                 <p className="font-bold">¡Úsala como App!</p>
-                <p>Toca <Share className="inline w-3 h-3" /> y luego <PlusSquare className="inline w-3 h-3" /> "Añadir a inicio" para pantalla completa.</p>
+                <p className="mt-1">Toca <Share className="inline w-3 h-3 mb-0.5" /> y luego <PlusSquare className="inline w-3 h-3 mb-0.5" /> "Añadir a inicio" para pantalla completa.</p>
               </div>
               <button onClick={() => setShowIOSPrompt(false)} className="text-white/60 hover:text-white">
                 <X className="w-4 h-4" />
@@ -146,8 +146,8 @@ function App() {
         )}
 
         <Suspense fallback={
-          <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          <div className="fixed inset-0 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm z-[100]">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
           </div>
         }>
           <Routes>

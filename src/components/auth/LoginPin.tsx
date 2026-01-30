@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAppStore } from '../../store/appStore';
-import { Lock, Loader, UserCheck } from 'lucide-react';
+import { Lock, Loader2, UserCheck } from 'lucide-react';
 
 /**
  * LoginPin Component
@@ -122,7 +122,7 @@ export const LoginPin: React.FC = () => {
         setAttempts(0);
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
         audio.volume = 0.4;
-        audio.play().catch(() => console.log('Audio blocked by browser'));
+        audio.play().catch((err) => console.warn('Audio playback failed:', err));
 
         // --- Lógica de Registro de Dispositivo ---
         const userAgent = navigator.userAgent;
@@ -130,8 +130,19 @@ export const LoginPin: React.FC = () => {
         const isAndroid = /Android/.test(userAgent);
         const deviceName = isIOS ? 'iOS Device' : isAndroid ? 'Android Device' : 'Desktop Browser';
         
-        // Generamos un fingerprint básico basado en el navegador (seguro para caracteres especiales)
-        const fingerprint = btoa(unescape(encodeURIComponent(userAgent + screen.width + screen.height))).substring(0, 24);
+        // Generamos un fingerprint robusto incluyendo idioma y profundidad de color
+        const deviceSpecs = [
+          userAgent,
+          screen.width,
+          screen.height,
+          screen.colorDepth,
+          navigator.language
+        ].join('|');
+        
+        // Alternativa moderna a unescape para manejar caracteres especiales en Base64
+        const fingerprint = btoa(encodeURIComponent(deviceSpecs).replace(/%([0-9A-F]{2})/g, (_, p1) => 
+          String.fromCharCode(parseInt(p1, 16))
+        )).substring(0, 24);
 
         // Buscamos si este dispositivo ya existe para este usuario
         const { data: deviceData, error: deviceError } = await supabase
@@ -181,13 +192,13 @@ export const LoginPin: React.FC = () => {
         // Normalizamos el rol (aseguramos que 'role' exista si viene como 'rol')
         const userWithRole = { ...data, role: data.role || data.rol };
         
-        // Feedback visual y auditivo antes de entrar al sistema
+        // Sincronización con el estado global y navegación
         setCurrentUser(userWithRole);
         if (mappedDevice) setCurrentDevice(mappedDevice);
         
         setTimeout(() => {
           setAuthenticated(true);
-          navigate('/pos', { replace: true });
+          navigate('/pos', { replace: true }); // Evita que el usuario regrese al login
         }, 1000);
       }
     } catch (err) {
@@ -352,15 +363,16 @@ export const LoginPin: React.FC = () => {
             {/* Botón de Submit */}
             <button
               type="submit"
-              disabled={!isValid || isLoading || !!lockoutUntil}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
-                isValid && !isLoading && !lockoutUntil
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg active:scale-95'
+              disabled={!isValid || isLoading || !!lockoutUntil || isSuccess}
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 h-12 ${
+                isValid && !isLoading && !lockoutUntil && !isSuccess
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg active:scale-[0.98]'
+                  : isSuccess ? 'bg-green-600 shadow-lg shadow-green-200'
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              {isLoading && <Loader className="animate-spin" size={20} />}
-              {isLoading ? 'Validando...' : lockoutUntil ? 'Bloqueado' : 'Ingresar'}
+              {isLoading && <Loader2 className="animate-spin" size={20} />}
+              {isSuccess ? '¡Éxito!' : isLoading ? 'Validando...' : lockoutUntil ? 'Bloqueado' : 'Ingresar'}
             </button>
           </form>
 
